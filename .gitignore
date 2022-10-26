@@ -1,0 +1,4 @@
+/gui/scatter3D.html
+/src/utilities/*
+*__pycache__
+/node_modules
