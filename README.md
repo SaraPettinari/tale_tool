@@ -1,6 +1,5 @@
-# README #
-![SM](img/spaceminer.png)
-Description ...
+# TALE tool #
+TALE tool implements a graphycal interface to handle Multi-Robot System data and analyze them with two process mining techniques
 
 ## Installation
 ```bash
