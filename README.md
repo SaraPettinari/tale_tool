@@ -1,5 +1,5 @@
-# TALE tool #
-TALE tool implements a graphycal interface to handle Multi-Robot System data and analyze them with two process mining techniques
+# TALE analysis #
+TALE tool implements a graphycal interface to handle Multi-Robot System data and analyze them with two process mining techniques. This repository contains the tool for performing the process mining-based analysis.
 
 ## Installation
 ```bash
