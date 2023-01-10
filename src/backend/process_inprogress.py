@@ -1,51 +1,86 @@
 import csv
-from glob import glob
 import os
+import datetime
 import pandas as pd
 import xml.etree.ElementTree as ET
-
+from glob import glob
 from pm4py.objects.conversion.log import converter as log_converter
 from pm4py.objects.log.exporter.xes import exporter as xes_exporter
 
 out_file = 'temp_all.csv'
 
+maxy = 9.5
 
 def assign_progressive_state(path):
     data = []
+    out_data = []
     with open(path, 'r') as read_obj:
         reader = csv.DictReader(read_obj)
         for line in reader:
             data.append(line)
 
-        for j in range(0, len(data), 1):
-            if data[j]['activity'] != data[j + 1]['activity'] and data[j]['activity'] != data[j - 1]['activity']:
-                l = {}
-                l1 = {}
-                l.update(data[j])
-                l1.update(data[j])
-                data.insert(j+1, l)
-                data.insert(j+2, l1)
+        for j in range(0, len(data) - 1, 1):
+            if data[j]['activity'] == data[j + 1]['activity'] and data[j]['activity'] != data[j - 1]['activity']:
+                start_act = data[j]
+                out_data.append(start_act)
 
-        for i in range(0, len(data), 1):
-            if i == 0:
-                data[i]['lifecycle'] = 'start'
-            elif i == len(data) - 1:
-                data[i]['lifecycle'] = 'complete'
-            else:
-                if data[i].get('activity') == data[i+1].get('activity'):
-                    if data[i]['lifecycle'] == '':
-                        data[i]['lifecycle'] = 'inprogress'
-                        data[i+1]['lifecycle'] = 'inprogress'
-                else:
-                    data[i]['lifecycle'] = 'complete'
-                    data[i+1]['lifecycle'] = 'start'
+                end_act = data[j+1]
+                start_time = datetime.datetime.strptime(
+                    start_act.get('time'), '%Y-%m-%d %H:%M:%S.%f')
+                end_time = datetime.datetime.strptime(
+                    end_act.get('time'), '%Y-%m-%d %H:%M:%S.%f')
+                delta_time = (end_time - start_time)
+
+                start_x = float(start_act.get('x'))
+                start_y = float(start_act.get('y'))
+                start_z = float(start_act.get('z'))
+                end_x = float(end_act.get('x'))
+                end_y = float(end_act.get('y'))
+                end_z = float(end_act.get('z'))
+
+                if delta_time.seconds > 1:
+                    delta_x = (end_x - start_x) / delta_time.seconds
+                    delta_y = (end_y - start_y) / delta_time.seconds
+                    delta_z = (end_z - start_z) / delta_time.seconds
+
+                elif delta_time.seconds == 1:
+                    delta_x = (end_x - start_x) / 2
+                    delta_y = (end_y - start_y) / 2
+                    delta_z = (end_z - start_z) / 2
+
+                last_act = {}
+                last_act.update(start_act)
+                for k in range(delta_time.seconds):
+                    append_act = {}
+                    append_act.update(last_act)
+                    append_act['lifecycle'] = ''
+                    if isinstance(append_act.get('time'), datetime.datetime):
+                        append_act['time'] = append_act.get(
+                            'time') + (delta_time / delta_time.seconds)
+                    else:
+                        append_act['time'] = datetime.datetime.strptime(append_act.get(
+                            'time'), '%Y-%m-%d %H:%M:%S.%f') + delta_time / delta_time.seconds
+
+                    append_act['x'] = float(append_act.get('x')) + delta_x
+                    append_act['y'] = float(append_act.get('y')) + delta_y
+                    append_act['z'] = float(append_act.get('z')) + delta_z
+
+                    out_data.append(append_act)
+
+                    last_act.update(append_act)
+
+                out_data.append(end_act)
+
+        for el in out_data:
+            if el.get('lifecycle') == '':
+                el['lifecycle'] = 'inprogress'
+
+        header = line.keys()
 
         with open(out_file, 'w', newline='') as csv_file:
-            fieldnames = ['case', 'time', 'activity',
-                          'lifecycle', 'x', 'y', 'z', 'robot']
-            writer = csv.DictWriter(csv_file, fieldnames)
+            writer = csv.DictWriter(csv_file, header)
             writer.writeheader()
-            for row in data:
+            for row in out_data:
                 writer.writerow(row)
 
 
@@ -74,7 +109,7 @@ def csv_to_xes(path):
         data = file.read()
         data = data.replace(search_text, replace_text)
 
-    with open('file.xes', 'w') as file:
+    with open('dronefile.xes', 'w') as file:
         file.write(data)
 
     return file_name
@@ -165,5 +200,5 @@ def apply_odom(path):
 
 
 if __name__ == '__main__':
-    assign_progressive_state('all.csv')
+    assign_progressive_state('drone0.csv')
     csv_to_xes(out_file)
