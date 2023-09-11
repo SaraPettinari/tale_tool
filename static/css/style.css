@@ -1,0 +1,47 @@
+#mynetwork {
+    width: 900px;
+    height: 600px;
+    border: 1px solid lightgray;
+    text-align: center;
+}
+
+.banner {
+    padding: 12px;
+    background-color: #17a2b8;
+    color: white;
+}
+
+.closebtn {
+    margin-left: 12px;
+    color: white;
+    font-weight: bold;
+    float: right;
+    font-size: 22px;
+    line-height: 20px;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+.closebtn:hover {
+    color: black;
+}
+
+body {
+    color: #333;
+    font-size: 14pt;
+}
+
+h1 {
+    font-size: 24pt;
+}
+
+.node rect {
+    stroke: #333;
+    fill: #fff;
+}
+
+.edgePath path {
+    stroke: #333;
+    fill: #333;
+    stroke-width: 1.5px;
+}

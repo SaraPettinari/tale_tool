@@ -2,15 +2,11 @@ import sys
 
 import json
 import os
-from tabnanny import check
-import time
-from urllib import response
 import webbrowser
 from functools import wraps
 
 from flask import Flask, render_template, jsonify, request
 import webview
-import app
 
 import pm4py
 from pm4py.objects.log.importer.xes import importer as xes_importer
@@ -18,7 +14,6 @@ from pm4py.statistics.attributes.log import get as attr_get
 from pm4py.util import exec_utils
 from pm4py.util import xes_constants as xes
 from pm4py.visualization.dfg.parameters import Parameters
-from pm4py.algo.discovery.dfg import algorithm as dfg_discovery
 from pm4py.visualization.dfg.variants.frequency import get_activities_color, get_min_max_value
 from pm4py.objects.log.util import interval_lifecycle
 from pm4py.algo.transformation.log_to_features import algorithm as log_to_features
@@ -28,18 +23,11 @@ from pandas import DataFrame
 import plotly.express as px
 import pandas as pd
 
-from xes_handler import merge_xes, csv_to_xes
+from src.xes_handler import merge_xes, csv_to_xes
 from collections import Counter
 
 
-gui_dir = os.path.join(os.path.dirname(__file__), '..',
-                       '..', 'gui')  # development path
-
-
-if not os.path.exists(gui_dir):  # frozen executable path
-    gui_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'gui')
-
-server = Flask(__name__, static_folder=gui_dir, template_folder=gui_dir)
+server = Flask(__name__)
 server.config['SEND_FILE_MAX_AGE_DEFAULT'] = 1  # disable caching
 
 files_dict = {}
@@ -76,27 +64,6 @@ def landing():
 @server.route('/csv_processing')
 def csv_processing():
     return render_template('csv_parser.html', token=webview.token)
-
-
-@server.route('/init', methods=['POST'])
-@verify_token
-def initialize():
-    '''
-    Perform heavy-lifting initialization asynchronously.
-    :return:
-    '''
-    can_start = app.initialize()
-
-    if can_start:
-        response = {
-            'status': 'ok',
-        }
-    else:
-        response = {
-            'status': 'error'
-        }
-
-    return jsonify(response)
 
 
 @server.route('/select/logs', methods=['POST'])
@@ -269,7 +236,7 @@ def create_scatter3D():
             zerolinecolor="white",),),
     )
 
-    fig_path = os.getcwd() + "/gui/scatter3D.html"
+    fig_path = os.getcwd() + "/templates/scatter3D.html"
     fig.write_html(fig_path)
 
     return jsonify({})
@@ -292,7 +259,7 @@ def create_scatter3D_all():
                         # animation_frame='case',
                         )
 
-    fig_path = os.getcwd() + "/gui/scatter3D.html"
+    fig_path = os.getcwd() + "/templates/scatter3D.html"
     fig.write_html(fig_path)
 
     return jsonify({})
