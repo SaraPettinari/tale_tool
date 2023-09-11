@@ -45,3 +45,13 @@ h1 {
     fill: #333;
     stroke-width: 1.5px;
 }
+
+.navbar-light{
+    background-color: #8A33FF;
+}
+
+
+.btn {
+    color: #8A33FF;
+    border-color: #8A33FF; 
+  }

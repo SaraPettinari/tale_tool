@@ -5,7 +5,7 @@ import os
 import webbrowser
 from functools import wraps
 
-from flask import Flask, render_template, jsonify, request
+from flask import Flask, render_template, jsonify, request, flash
 import webview
 
 import pm4py
@@ -32,19 +32,7 @@ server.config['SEND_FILE_MAX_AGE_DEFAULT'] = 1  # disable caching
 
 files_dict = {}
 heatmap_data = {}
-
-
-def verify_token(function):
-    @wraps(function)
-    def wrapper(*args, **kwargs):
-        data = json.loads(request.data)
-        token = data.get('token')
-        if token == webview.token:
-            return function(*args, **kwargs)
-        else:
-            raise Exception('Authentication error')
-
-    return wrapper
+resp_list = []
 
 
 @server.after_request
@@ -58,53 +46,37 @@ def landing():
     """
     Render index.html. Initialization is performed asynchronously in initialize() function
     """
-    return render_template('index.html', token=webview.token)
+    return render_template('index.html')
 
 
 @server.route('/csv_processing')
 def csv_processing():
-    return render_template('csv_parser.html', token=webview.token)
+    return render_template('csv_parser.html')
 
 
 @server.route('/select/logs', methods=['POST'])
-@verify_token
 def choose_path():
-    '''
-    Invoke a folder selection dialog here
-    :return:
-    '''
-    file_types = ('XES Files (*.xes)', 'All files (*.*)')
-    files = webview.windows[0].create_file_dialog(
-        webview.OPEN_DIALOG, allow_multiple=True, file_types=file_types)
-    if files and len(files) > 0:
-        i = 1
-        for file in files:
-            files_dict[i] = file
-            i = i + 1
-        response = {'status': 'ok', 'filesdict': files_dict}
-    else:
-        response = {'status': 'cancel'}
-    return jsonify(response)
+    files_list = request.files.getlist('file')
+    for f in files_list:
+        if f.filename.endswith('xes'):
+            f.save(os.path.join(server.root_path, 'docs', 'logs', f.filename))
+            resp_list.append(f.filename)
+            
+    return render_template('index.html', files = resp_list)
 
 
 @server.route('/filter', methods=['POST'])
-@verify_token
 def get_resources():
-    data = json.loads(request.data)
-    file_key = data.get('key')
-    file_path = files_dict[file_key]
+    data = request.form['file_name']
+    file_path = os.path.join(server.root_path, 'docs', 'logs', data)
     log = xes_importer.apply(file_path)
     # Filter resources
     resources = pm4py.get_event_attribute_values(log, "org:resource")
-    res = list(resources.keys())
-    res.append(file_key)
-    res.append(file_path)
-    response = jsonify(res)
-    return response
+    resources_list = list(resources.keys())
+    return render_template('index.html', files = resp_list, resources = resources_list)
 
 
 @server.route('/csv/parse', methods=['POST'])
-@verify_token
 def parse_csv():
     file_types = ('CSV Files (*.csv)', 'All files (*.*)')
     files = webview.windows[0].create_file_dialog(
@@ -119,7 +91,6 @@ def parse_csv():
 
 
 @server.route('/discover/all', methods=['POST'])
-@verify_token
 def discover_all():
     data = json.loads(request.data)
     data.pop('token')
@@ -132,7 +103,6 @@ def discover_all():
 
 
 @server.route('/discover/all/performance', methods=['POST'])
-@verify_token
 def discover_all_p():
     data = json.loads(request.data)
     data.pop('token')
@@ -193,7 +163,6 @@ def log_to_dataframe(log_path):
 
 
 @server.route('/view/3Dscatter', methods=['POST'])
-@verify_token
 def create_scatter3D():
     data = json.loads(request.data)
     file_key = data.get('key')
@@ -243,7 +212,6 @@ def create_scatter3D():
 
 
 @server.route('/view/3Dscatter/all', methods=['POST'])
-@verify_token
 def create_scatter3D_all():
     file_key = 20
     file_path = files_dict[file_key]
@@ -266,7 +234,6 @@ def create_scatter3D_all():
 
 
 @server.route('/show/area', methods=['POST'])
-@verify_token
 def create_plot_area():
     data = json.loads(request.data)
 
@@ -321,7 +288,6 @@ def old_create_scatter3D():
 
 
 @server.route('/show/scatter2D', methods=['POST'])
-@verify_token
 def create_2dscatter():
     data = json.loads(request.data)
 
@@ -344,7 +310,6 @@ def create_2dscatter():
 
 
 @server.route('/show/heatmap', methods=['POST'])
-@verify_token
 def create_heatmap():
     data = json.loads(request.data)
     activity = data.get('activity')
@@ -639,7 +604,6 @@ def create_performance(file_path, location_graph=False):
 
 
 @server.route('/discover/activity', methods=['POST'])
-@verify_token
 def discover_dfg():
     data = json.loads(request.data)
     file_key = data.get('key')
@@ -651,7 +615,6 @@ def discover_dfg():
 
 
 @server.route('/discover/performance', methods=['POST'])
-@verify_token
 def discover_performance():
     data = json.loads(request.data)
     file_key = data.get('key')
@@ -698,7 +661,6 @@ def case_filtering():
 
 
 @server.route('/discover/resource', methods=['POST'])
-@verify_token
 def discover_resource():
     data = json.loads(request.data)
     file_key = data.get('key')
@@ -710,7 +672,6 @@ def discover_resource():
 
 
 @server.route('/open-url', methods=['POST'])
-@verify_token
 def open_url():
     url = request.json['url']
     webbrowser.open_new_tab(url)
