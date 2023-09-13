@@ -52,251 +52,9 @@ function selectCaseHandler() {
     }
 }
 
-function updateTree() {
-    if (this.responseText) {
-        var response = JSON.parse(this.responseText);
-        var key = response.file_key
-        // create a network
-        var container = document.getElementById('mynetwork');
-        // provide the data in the vis format
-        var data = {
-            nodes: response.nodes,
-            edges: response.edges
-        };
-        var options = {
-            physics: {
-                enabled: false,
-                barnesHut: {
-                    gravitationalConstant: -50000,
-                    avoidOverlap: 1
-                },
-                stabilization: {
-                    enabled: true,
-                },
-            },
-            layout: {
-                hierarchical: {
-                    enabled: false,
-                    direction: 'UD',
-                }
-            },
-            edges: {
-                arrows: {
-                    to: true
-                },
-                color: {
-                    color: '#919191'
-                },
-                font: {
-                    background: '#ffffff',
-                    size: 20
-                },
-                smooth: {
-                    enabled: false,
-                },
-                selfReference: {
-                    size: 30,
-                }
-            },
-            nodes: {
-                shape: 'box',
-                color: {
-                    border: '#919191'
-                },
-                font: {
-                    size: 20
-                }
-            }
-        }
-        var network = new vis.Network(container, data, options);
-        network.on("click", function (params) {
-            if (params.nodes != undefined & params.nodes[0] != undefined) {
-                //doAjax("/show/heatmap", "POST", showHeatmapHandler, { 'activity': params.nodes[0] });
-                doAjax("/show/scatter2D", "POST", showScatterHandler, { 'activity': params.nodes[0], 'key': key });
-            }
-        });
-    }
-}
-
-function testdagre(data) {
-    nodes = []
-    for (n in data.nodes) {
-        //node_data.push({ id: in_data.nodes[n]['Event_Id'], properties: in_data.nodes[n] })
-        node = data.nodes[n]
-        if (node.label != null) {
-            node.label = node.label.replaceAll("_", "\n")
-        }
-        nodes.push({ data: { id: node.id, label: node.label } })
-    }
-
-    edges = []
-    for (e in data.edges) {
-        edge = data.edges[e]
-        edge_label = edge.label
-        edges.push({ data: { source: edge.from, target: edge.to, id: e, label: edge_label } })
-    }
-
-    elements = nodes.concat(edges)
-    console.log(nodes)
-
-    var g = new dagre.graphlib.Graph().setGraph({});
-
-    for (n in nodes) {
-        label = nodes[n].data.id
-        g.setNode(label, { label: label, fill: "#afa" });
-    }
-    for (e in edges) {
-
-        g.setEdge(edges[e].data.source, edges[e].data.target, {});
-    }
-    // Create the renderer
-    var render = new dagreD3.render();
-
-    // Set up an SVG group so that we can translate the final graph.
-    var svg = d3.select('svg'),
-        svgGroup = svg.append('g');
-
-    d3.color("steelblue")
-
-    // Run the renderer. This is what draws the final graph.
-    render(svgGroup, g);
-
-}
-
-function generate_dagre(data) {
-    nodes = []
-    for (n in data.nodes) {
-        //node_data.push({ id: in_data.nodes[n]['Event_Id'], properties: in_data.nodes[n] })
-        node = data.nodes[n]
-        if (node.label != null) {
-            node.label = node.label.replaceAll("_", "\n")
-        }
-        nodes.push({ data: { id: node.id, label: node.label } })
-    }
-
-    edges = []
-    for (e in data.edges) {
-        edge = data.edges[e]
-        edge_label = edge.label
-        edges.push({ data: { source: edge.from, target: edge.to, id: e, label: edge_label, weight: edge_label } })
-    }
-
-    elements = nodes.concat(edges)
-    console.log(nodes)
-
-    var cy = cytoscape({
-        container: document.getElementById('cyto'), // container to render in
-        elements: elements,
-        style: [ // the stylesheet for the graph
-            {
-                selector: 'node',
-                style: {
-                    'height': 50,
-                    'width': 100,
-                    'background-color': '#666666',
-                    'shape': 'round-rectangle',
-                    'label': 'data(label)',
-                    'color': '#ffffff',
-                    'text-wrap': 'wrap',
-                    'text-halign': 'center',
-                    'text-valign': 'center'
-                }
-            },
-
-            {
-                selector: 'edge',
-                style: {
-                    'label': 'data(label)',
-                    'width': 1,
-                    'line-color': 'data(color)',
-                    'target-arrow-color': 'data(color)',
-                    'target-arrow-shape': 'triangle',
-                    'curve-style': 'bezier',
-                    'text-background-opacity': 1,
-                    'text-background-color': '#ffffff',
-                    'text-wrap': 'wrap',
-                    'loop-sweep': '-45deg',
-                    'control-point-step-size': 100,
-                    'segment-distances': "50 -50 20",
-
-                }
-            }
-        ],
-
-        layout: {
-            name: 'dagre',
-            nodeSep: 25,
-            rankSep: 50,
-            edgeSep: 50,
-            rankDir: 'TB',
-            nodeDimensionsIncludeLabels: true,
-            fit: true,
-        },
-    });
-
-    let defaults = {
-        menuRadius: function (ele) { return 100; }, // the outer radius (node center to the end of the menu) in pixels. It is added to the rendered size of the node. Can either be a number or function as in the example.
-        selector: 'node', // elements matching this Cytoscape.js selector will trigger cxtmenus
-        commands: [ // an array of commands to list in the menu or a function that returns the array
-
-            { 
-                fillColor: 'rgba(0, 200, 200, 0.85)', // optional: custom background color for item
-                content: 'Space', // html/text content to be displayed in the menu
-                contentStyle: {}, // css key:value pairs to set the command's css in js if you want
-                select: function (ele) { // a function to execute when the command is selected
-                    console.log(ele.id()) // `ele` holds the reference to the active element
-                },
-                hover: function (ele) { // a function to execute when the command is hovered
-                    console.log(ele.id()) // `ele` holds the reference to the active element
-                },
-                enabled: true // whether the command is selectable
-            },
-            { 
-                fillColor: 'rgba(200, 0, 200, 0.85)', // optional: custom background color for item
-                content: 'Time', // html/text content to be displayed in the menu
-                contentStyle: {}, // css key:value pairs to set the command's css in js if you want
-                select: function (ele) { // a function to execute when the command is selected
-                    console.log(ele.id()) // `ele` holds the reference to the active element
-                },
-                hover: function (ele) { // a function to execute when the command is hovered
-                    console.log(ele.id()) // `ele` holds the reference to the active element
-                },
-                enabled: true // whether the command is selectable
-            },
-            { 
-                fillColor: 'rgba(200, 100, 100, 0.85)', // optional: custom background color for item
-                content: 'Energy', // html/text content to be displayed in the menu
-                contentStyle: {}, // css key:value pairs to set the command's css in js if you want
-                select: function (ele) { // a function to execute when the command is selected
-                    console.log(ele.id()) // `ele` holds the reference to the active element
-                },
-                hover: function (ele) { // a function to execute when the command is hovered
-                    console.log(ele.id()) // `ele` holds the reference to the active element
-                },
-                enabled: true // whether the command is selectable
-            },
-
-
-        ],
-        function(ele) { return [ /*...*/] }, // a function that returns commands or a promise of commands
-        fillColor: 'rgba(0, 0, 0, 0.85)', // the background colour of the menu
-        activeFillColor: 'rgba(1, 105, 217, 0.75)', // the colour used to indicate the selected command
-        activePadding: 20, // additional size in pixels for the active command
-        indicatorSize: 24, // the size in pixels of the pointer to the active command, will default to the node size if the node size is smaller than the indicator size, 
-        separatorWidth: 3, // the empty spacing in pixels between successive commands
-        spotlightPadding: 4, // extra spacing in pixels between the element and the spotlight
-        adaptativeNodeSpotlightRadius: true, // specify whether the spotlight radius should adapt to the node size
-        openMenuEvents: 'cxttapstart taphold', // space-separated cytoscape events that will open the menu; only `cxttapstart` and/or `taphold` work here
-        itemColor: 'white', // the colour of text in the command's content
-        itemTextShadowColor: 'transparent', // the text shadow colour of the command's content
-        zIndex: 9999, // the z-index of the ui div
-    };
-
-    let menu = cy.cxtmenu(defaults);
-}
-
 function generate_graph(data) {
     nodes = []
+    console.log(data)
     for (n in data.nodes) {
         //node_data.push({ id: in_data.nodes[n]['Event_Id'], properties: in_data.nodes[n] })
         node = data.nodes[n]
@@ -420,24 +178,24 @@ function generate_graph(data) {
         }
     });
     let defaults = {
-        menuRadius: function (ele) { return 100; }, // the outer radius (node center to the end of the menu) in pixels. It is added to the rendered size of the node. Can either be a number or function as in the example.
+        menuRadius: function (ele) { return 50; }, // the outer radius (node center to the end of the menu) in pixels. It is added to the rendered size of the node. Can either be a number or function as in the example.
         selector: 'node', // elements matching this Cytoscape.js selector will trigger cxtmenus
         commands: [ // an array of commands to list in the menu or a function that returns the array
 
-            { // example command
-                fillColor: 'rgba(0, 200, 200, 0.85)', // optional: custom background color for item
+            { 
+                fillColor: 'rgba(111, 0, 255, 0.85)', // optional: custom background color for item
                 content: 'Space', // html/text content to be displayed in the menu
                 contentStyle: {}, // css key:value pairs to set the command's css in js if you want
                 select: function (ele) { // a function to execute when the command is selected
-                    console.log(ele.id()) // `ele` holds the reference to the active element
+                    showScatterHandler(ele.id())
                 },
                 hover: function (ele) { // a function to execute when the command is hovered
                     console.log(ele.id()) // `ele` holds the reference to the active element
                 },
                 enabled: true // whether the command is selectable
             },
-            { // example command
-                fillColor: 'rgba(200, 0, 200, 0.85)', // optional: custom background color for item
+            { 
+                fillColor: 'rgba(200, 162, 200, 0.85)', // optional: custom background color for item
                 content: 'Time', // html/text content to be displayed in the menu
                 contentStyle: {}, // css key:value pairs to set the command's css in js if you want
                 select: function (ele) { // a function to execute when the command is selected
@@ -448,8 +206,8 @@ function generate_graph(data) {
                 },
                 enabled: true // whether the command is selectable
             },
-            { // example command
-                fillColor: 'rgba(200, 100, 100, 0.85)', // optional: custom background color for item
+            { 
+                fillColor: 'rgba(153, 102, 102, 0.85)', // optional: custom background color for item
                 content: 'Energy', // html/text content to be displayed in the menu
                 contentStyle: {}, // css key:value pairs to set the command's css in js if you want
                 select: function (ele) { // a function to execute when the command is selected
@@ -465,11 +223,11 @@ function generate_graph(data) {
         ],
         function(ele) { return [ /*...*/] }, // a function that returns commands or a promise of commands
         fillColor: 'rgba(0, 0, 0, 0.85)', // the background colour of the menu
-        activeFillColor: 'rgba(1, 105, 217, 0.75)', // the colour used to indicate the selected command
+        activeFillColor: 'rgba(0, 0, 0, 0.75)', // the colour used to indicate the selected command
         activePadding: 20, // additional size in pixels for the active command
         indicatorSize: 24, // the size in pixels of the pointer to the active command, will default to the node size if the node size is smaller than the indicator size, 
         separatorWidth: 3, // the empty spacing in pixels between successive commands
-        spotlightPadding: 4, // extra spacing in pixels between the element and the spotlight
+        spotlightPadding: 2, // extra spacing in pixels between the element and the spotlight
         adaptativeNodeSpotlightRadius: true, // specify whether the spotlight radius should adapt to the node size
         openMenuEvents: 'cxttapstart taphold', // space-separated cytoscape events that will open the menu; only `cxttapstart` and/or `taphold` work here
         itemColor: 'white', // the colour of text in the command's content
@@ -510,14 +268,14 @@ function updateArea() {
     }
 }
 
-function showScatterHandler() {
-    if (this.responseText) {
-        var response = JSON.parse(this.responseText);
-        var activity = response.activity
+function showScatterHandler(responseText) {
+        var activity = responseText
+
+
         var data = [
             {
-                x: response.x,
-                y: response.y,
+                x: activity.x,
+                y: activity.y,
                 type: 'scatter',
                 mode: 'markers'
             }
@@ -535,7 +293,6 @@ function showScatterHandler() {
 
         Plotly.newPlot('scatter', data, layout);
     }
-}
 
 function showHeatmapHandler() {
     if (this.responseText) {
