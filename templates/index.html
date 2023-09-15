@@ -15,86 +15,107 @@
     <script src="https://code.jquery.com/jquery-3.6.0.slim.min.js"
         integrity="sha256-u7e5khyithlIdTpu22PHhENmPcRdFiHRjhAuHcs05RI=" crossorigin="anonymous"></script>
     <script type="text/javascript" src="{{ url_for('static', filename='js/script.js') }}">    </script>
-
-
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/cytoscape/3.26.0/cytoscape.min.js"></script>
+    <script src="https://unpkg.com/klayjs@0.4.1/klay.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/cytoscape-klay@3.1.4/cytoscape-klay.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/cytoscape-cxtmenu@3.5.0/cytoscape-cxtmenu.min.js"></script>
 </head>
 
 <body class="container-fluid">
-    <div class="container">
-        <nav class="navbar navbar-expand-lg navbar-dark navbar-light">
-            <span class="navbar-brand">Tale Analysis</span>
-        </nav>
-        <div id="parameters">
-            <div class="row">
-                <div class="col">
-                    <form action="/select/logs" method="POST" enctype="multipart/form-data">
-                        <div class="col"><label for="file">Select Event Log Files</label>
-                            <input class="btn btn-outline-secondary" type="file" name="file" multiple />
-                        </div>
-                        <div class="col"><input class="btn btn-outline-secondary" type="submit" type="button"
-                                value="Upload" /> </div>
-                    </form>
 
-                </div>
-                <div class="col">
-                    <button class="btn btn-outline-secondary" onclick="csvParser()">CSV parser</button>
-                </div>
-                <div id="generated_xes_name" class="col"> </div>
-            </div>
-            <!--<button onclick="toggleFullScreen()">Toggle fullscreen</button>-->
-            {% if files %}
-            <div class="row">
-                <table id="files-table">
-                    <tr>
-                        <th>File name</th>
-                        <th></th>
-                        <th></th>
-                    </tr>
-                    {% for value in files %}
-                    <tr>
-                        <td> {{ value }}</td>
-                        <td>
-                            <form action="/filter" method="POST">
-                                <input hidden name="file_name" value="{{value}}" />
-                                <input class='btn btn-outline-dark' type="submit" value="Filter by Resource" />
-                            </form>
-                        </td>
-                        {% if resources%}
-                        <td>
-                            <iframe name="dummy" style="display:none;"></iframe>
-                            <form method="POST" action="/filter/resource" class="form-group" target="dummy">
-                                <select class="custom-select" name="option" id="selectRes">
-                                {% for resource in resources %}
-                                <option value="{{resource}}">{{ resource }}</option>
-                                {% endfor %} </select>
-                                <input type="submit" class="btn btn-primary" />
-                            </form>
-                        </td>
-                        {% endif %}
-                        <td> <button class='btn btn-outline-dark' onclick='discoverActivityTree({{value}})'>Discover
-                                Process</button> </td>
-                        <td> <button class='btn btn-outline-dark' onclick='caseFiltering({{value}})'>3D Scatter</button>
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </table>
-            </div>
-            <div class="row">
-                <div class="col">
-                    <button class="btn btn-secondary" onclick="discoverAll()" disabled>Discover All!</button>
-                </div>
-                <div class="col"><button class="btn btn-secondary" onclick="discoverAllPerformance()" disabled>Discover
-                        All Performance!</button></div>
-                <div class="col"><button class="btn btn-secondary" onclick="scatterAll()" disabled>Scatter
-                        All!</button></div>
+    <nav class="navbar navbar-expand-lg navbar-dark navbar-light justify-content-center">
+        <h1 class="navbar-brand" style="font-size: 40px;">Tale Analysis</h1>
+    </nav>
+    <div class="row mt-3">
+        <div class="col  alert alert-secondary">
+            <div class="container">
+                {% if files %}
+                <h4> Filtering </h4>
+                <hr>
+                <form id="filters" action="/discover/activity" method="GET">
+                    {% if fdata.resources %}
+                    <h5> Resources </h5>
+                    <select class="custom-select" name="resource_option" id="selectRes">
+                        <option value="none" selected>None</option>
+                        {% for resource in fdata.resources %}
+                        <option value="{{resource}}" {% if resource_opt == resource %} selected {% endif %}>{{ resource }}</option>
+                        {% endfor %}
+                    </select>
+                    {% endif %}
+                    <hr>
+                    {% if fdata.cases %}
+                    <h5> Cases </h5>
+                    <select class="custom-select" name="case_option" id="selectCase">
+                        <option value="none" selected>None</option>
+                        {% for case in fdata.cases %}
+                        <option value="{{case}}" {% if case_opt == case %} selected {% endif %}>{{ case }}</option>
+                        {% endfor %}
+                    </select>
+                    <input hidden name="file_name" value="{{file_name}}" />
+                    {% endif %}
+                    <input type="submit" class="btn btn-outline-secondary" value="Apply Filters" />
+                </form>
+                {% endif %}
             </div>
         </div>
-
-        <div class="col">
+        <div class="col-10 ">
+            <div id="parameters" class="container">
+                <form action="/select/logs" method="POST" enctype="multipart/form-data">
+                    <div class="row">
+                        <div class="col-6"><label for="file">Select Event Log Files</label>
+                            <input class="btn btn-outline-secondary" type="file" name="file" multiple />
+                        </div>
+                        <div class="col-2"><input class="btn btn-outline-secondary" type="submit" type="button"
+                                value="Upload" /> </div>
+                        <div class="col-2">
+                            <button class="btn btn-outline-secondary" onclick="csvParser()">CSV parser</button>
+                        </div>
+                    </div>
+                </form>
+                <div id="generated_xes_name"> </div>
+                <hr>
+                <!--<button onclick="toggleFullScreen()">Toggle fullscreen</button>-->
+                {% if files %}
+                <div class="row">
+                    <table id="files-table">
+                        <tr>
+                            <th>Event Log</th>
+                            <th></th>
+                            <th></th>
+                        </tr>
+                        {% for value in files %}
+                        <tr>
+                            <td> {{ value }}</td>
+                            <td>
+                                <form action="/filter" method="POST">
+                                    <input hidden name="file_name" value="{{value}}" />
+                                    <input class='btn btn-outline-dark' type="submit" value="Create Filters" />
+                                </form>
+                            </td>
+                            <td>
+                                <form action="/discover/activity" method="POST">
+                                    <input hidden name="file_name" value="{{value}}" />
+                                    <input class='btn btn-outline-dark' type="submit" value="Discover Process"/>
+                                </form>
+                            </td>
+                            <td> <button class='btn btn-outline-dark' onclick='caseFiltering({{value}})'>3D
+                                    Scatter</button>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </table>
+                </div>
+                {% endif %}
+            </div>
+            <!--<div class="frame-graph">
+                <svg width=960 height=600></svg>
+            </div> -->
             <div class="row">
-
-                <div class="col">
-                    <div id="mynetwork"></div>
+                <div class="row frame-graph" id="cyto">
+                    <script>
+                        const response_data = {{ response_data|default ("") | tojson }}
+                        generate_graph(response_data)
+                    </script>
                 </div>
                 <div class="col">
                     <div id="scatter"></div>
@@ -106,18 +127,25 @@
             </div>
             <div class="row">
                 <div id="scatter3d"></div>
-            </div>
-
-        </div>
-
-        <div class="row">
-            <div class="col">
 
             </div>
 
         </div>
-        {% endif %}
-
+        <!--
+        <div class="col alert alert-secondary">
+            <div class="container">
+                <div class="btn-group">
+                    <button class="btn btn-secondary" onclick="discoverAll()" disabled>Discover All!</button>
+                </div>
+                <div class="btn-group">
+                    <button class="btn btn-secondary" onclick="scatterAll()" disabled>Scatter All!</button>
+                </div>
+                <div class="btn-group">
+                    <button class="btn btn-secondary" onclick="discoverAllPerformance()" disabled>Discover All
+                        Performance!</button>
+                </div>
+            </div>
+        </div>-->
     </div>
 </body>
 

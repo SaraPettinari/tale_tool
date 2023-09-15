@@ -2,11 +2,12 @@ import sys
 
 import json
 import os
+import webview
 import webbrowser
 from functools import wraps
 
 from flask import Flask, render_template, jsonify, request, flash
-import webview
+
 
 import pm4py
 from pm4py.objects.log.importer.xes import importer as xes_importer
@@ -33,6 +34,9 @@ server.config['SEND_FILE_MAX_AGE_DEFAULT'] = 1  # disable caching
 files_dict = {}
 heatmap_data = {}
 resp_list = []
+resources_list = []
+
+data_dict = {}
 
 
 @server.after_request
@@ -61,19 +65,62 @@ def choose_path():
         if f.filename.endswith('xes'):
             f.save(os.path.join(server.root_path, 'docs', 'logs', f.filename))
             resp_list.append(f.filename)
-            
-    return render_template('index.html', files = resp_list)
+
+        data_dict[f.filename] = {}
+
+    return render_template('index.html', files=resp_list, fdata=data_dict[f.filename])
 
 
 @server.route('/filter', methods=['POST'])
 def get_resources():
-    data = request.form['file_name']
-    file_path = os.path.join(server.root_path, 'docs', 'logs', data)
-    log = xes_importer.apply(file_path)
-    # Filter resources
-    resources = pm4py.get_event_attribute_values(log, "org:resource")
-    resources_list = list(resources.keys())
-    return render_template('index.html', files = resp_list, resources = resources_list)
+    file_name = request.form['file_name']
+    file_path = os.path.join(server.root_path, 'docs', 'logs', file_name)
+    df = log_to_dataframe(file_path)
+
+    resources_list = []
+    cases_list = []
+
+    if 'resource' in df.keys():
+        resources = df["resource"].unique()
+        resources_list = list(resources.tolist())
+
+    if 'case' in df.keys():
+        cases = df['case'].unique()
+        cases_list = list(cases.tolist())
+
+    data_dict[file_name] = {
+        'resources': resources_list, 'cases': cases_list}
+
+    return render_template('index.html', files=resp_list, file_name=file_name, fdata=data_dict[file_name])
+
+
+@server.route('/discover/activity', methods=['GET', 'POST'])
+def discover_dfg():
+    if request.method == 'GET':
+        res_opt = request.args.get('resource_option')
+        case_opt = request.args.get('case_option')
+        file_name = request.args.get('file_name')
+        file_path = os.path.join(server.root_path, 'docs', 'logs', file_name)
+
+        if(res_opt == 'none' and case_opt == 'none'):
+            filtering_conditions = {}
+        else:
+            filtering_conditions = {'org:resource': res_opt}
+
+        (nodes, edges) = create_dfg(file_path,
+                                    filtering_conditions)
+
+        return render_template('index.html', files=resp_list, file_name=file_name, fdata=data_dict[file_name],
+                               resource_opt=res_opt, case_opt=int(case_opt), response_data={'nodes': nodes, 'edges': edges})
+
+    elif request.method == 'POST':
+        file_name = request.form['file_name']
+        file_path = os.path.join(server.root_path, 'docs', 'logs', file_name)
+
+        (nodes, edges) = create_dfg(file_path)
+
+        return render_template('index.html', files=resp_list, fdata=data_dict[file_name],
+                               response_data={'nodes': nodes, 'edges': edges})
 
 
 @server.route('/csv/parse', methods=['POST'])
@@ -141,7 +188,7 @@ def log_to_dataframe(log_path):
                     cases.append(case)
                 elif el.attrib['key'] == 'time:timestamp':
                     times.append(el.attrib['value'])
-                elif el.attrib['key'] == 'resource':
+                elif el.attrib['key'] == 'org:resource':
                     resource.append(el.attrib['value'])
                 elif el.attrib['key'] == 'activity':
                     location_activity.append(el.attrib['value'])
@@ -257,34 +304,6 @@ def create_plot_area():
 
     response = {'x': x, 'y': y}
     return jsonify(response)
-
-
-'''
-def old_create_scatter3D():
-    data = json.loads(request.data)
-    file_key = data.get('key')
-    file_path = files_dict[file_key]
-
-    df = log_to_dataframe(file_path)
-
-    resp = json.loads(df.to_json())
-
-    x = []
-    y = []
-    z = []
-    act = []
-    for el in resp['x']:
-        x.append(resp['x'][el])
-    for el in resp['y']:
-        y.append(resp['y'][el])
-    for el in resp['z']:
-        z.append(resp['z'][el])
-    for el in resp['activity']:
-        act.append(resp['activity'][el])
-    response = {'x': x, 'y': y, 'z': z, 'activity': act}
-
-    return jsonify(response)
-'''
 
 
 @server.route('/show/scatter2D', methods=['POST'])
@@ -404,7 +423,7 @@ def test(activities_count):
     return activities_color
 
 
-def create_dfg(file_path, location_graph=False, resource=''):
+def create_dfg_v2(file_path, resource=''):
     log = xes_importer.apply(file_path)
     log_neg = pm4py.filter_event_attribute_values(
         log, "lifecycle:transition", ["inprogress"], level="event", retain=False)
@@ -428,20 +447,77 @@ def create_dfg(file_path, location_graph=False, resource=''):
     edges = []
     id0 = 0
     id1 = 0
-    nodes.append({'id': 'start_node', 'label': None, 'shape': 'triangleDown',
+    nodes.append('start_node')
+    nodes.append('end_node')
+    for key in dfg:
+        color = "#99ccff"
+        if (key[0] in start_activities):
+            # color = "#ADFF2F"
+            edges.append(('start_node', key[0]))
+        if (key[0] in end_activities):
+            # color = "#ff6666"
+            edges.append((key[0], 'end_node'))
+        if (not (key[0] in n_check)):
+            n_check.add(key[0])
+            nodes.append(key[0])
+        # color = "#99ccff"
+        if (key[1] in start_activities):
+            # color = "#ADFF2F"
+            edges.append(('start_node', key[1]))
+        if (key[1] in end_activities):
+            # color = "#ff6666"
+            edges.append((key[1], 'end_node'))
+        if (not (key[1] in n_check)):
+            n_check.add(key[1])
+            nodes.append(key[1])
+
+        edges.append((key[0], key[1]))
+
+        id0 = id0 + 1
+        id1 = id1 + 1
+
+    return (nodes, edges)
+
+
+def create_dfg(file_path, filtering_conditions={}):
+    log = xes_importer.apply(file_path)
+    log_neg = pm4py.filter_event_attribute_values(
+        log, "lifecycle:transition", ["inprogress"], level="event", retain=False)
+
+    log = interval_lifecycle.to_interval(log_neg)
+
+    if len(filtering_conditions) > 0:
+        for condition in filtering_conditions.keys():
+            tracefilter = pm4py.filter_event_attribute_values(
+                log, condition, filtering_conditions[condition], level="event", retain=True)
+        dfg, start_activities, end_activities = pm4py.discover_directly_follows_graph(
+            tracefilter)
+    else:
+        dfg, start_activities, end_activities = pm4py.discover_directly_follows_graph(
+            log)
+    activity_key = exec_utils.get_param_value(
+        Parameters.ACTIVITY_KEY, {}, xes.DEFAULT_NAME_KEY)
+    activity_count = attr_get.get_attribute_values(
+        log, activity_key, parameters={})
+    nodes = []
+    n_check = set()
+    edges = []
+    id0 = 0
+    id1 = 0
+    nodes.append({'id': 'start_node', 'label': 'start', 'shape': 'triangleDown',
                  'size': 10, 'color': {'background': '#ADFF2F', 'border': "#ADFF2F"}})
-    nodes.append({'id': 'end_node', 'label': None, 'shape': 'hexagon',
+    nodes.append({'id': 'end_node', 'label': 'end', 'shape': 'hexagon',
                  'size': 10, 'color': {'background': '#ff6666', 'border': "#ff6666"}})
     for key in dfg:
         color = "#99ccff"
         if (key[0] in start_activities):
             # color = "#ADFF2F"
             edges.append(
-                {'from': 'start_node', 'to': key[0], 'label': None, 'dashes': True})
+                {'from': 'start_node', 'to': key[0], 'label': 0, 'dashes': True})
         if (key[0] in end_activities):
             # color = "#ff6666"
             edges.append(
-                {'from': key[0], 'to': 'end_node', 'label': None, 'dashes': True})
+                {'from': key[0], 'to': 'end_node', 'label': 0, 'dashes': True})
         if (not (key[0] in n_check)):
             n_check.add(key[0])
             nodes.append({'id': key[0], 'label': key[0], 'color': {
@@ -450,11 +526,11 @@ def create_dfg(file_path, location_graph=False, resource=''):
         if (key[1] in start_activities):
             # color = "#ADFF2F"
             edges.append(
-                {'from': 'start_node', 'to': key[1], 'label': None, 'dashes': True})
+                {'from': 'start_node', 'to': key[1], 'label': 0, 'dashes': True})
         if (key[1] in end_activities):
             # color = "#ff6666"
             edges.append(
-                {'from': key[1], 'to': 'end_node', 'label': None, 'dashes': True})
+                {'from': key[1], 'to': 'end_node', 'label': 0, 'dashes': True})
         if (not (key[1] in n_check)):
             n_check.add(key[1])
             nodes.append({'id': key[1], 'label': key[1], 'color': {
@@ -603,17 +679,6 @@ def create_performance(file_path, location_graph=False):
     return (nodes, edges)
 
 
-@server.route('/discover/activity', methods=['POST'])
-def discover_dfg():
-    data = json.loads(request.data)
-    file_key = data.get('key')
-    file_path = files_dict[file_key]
-
-    (nodes, edges) = create_dfg(file_path)
-
-    return jsonify({'nodes': nodes, 'edges': edges, 'file_key': file_key})
-
-
 @server.route('/discover/performance', methods=['POST'])
 def discover_performance():
     data = json.loads(request.data)
@@ -628,7 +693,7 @@ def discover_performance():
 @server.route('/filter/resource', methods=['GET', 'POST'])
 def filter_resource():
     global resource
-    resource = request.form['option']
+    resource = request.form['resource_option']
     return jsonify(resource)
 
 
