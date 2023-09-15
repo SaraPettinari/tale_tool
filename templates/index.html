@@ -22,12 +22,11 @@
 </head>
 
 <body class="container-fluid">
-
     <nav class="navbar navbar-expand-lg navbar-dark navbar-light justify-content-center">
         <h1 class="navbar-brand" style="font-size: 40px;">Tale Analysis</h1>
     </nav>
     <div class="row mt-3">
-        <div class="col  alert alert-secondary">
+        <div class="col alert alert-secondary">
             <div class="container">
                 {% if files %}
                 <h4> Filtering </h4>
@@ -38,7 +37,8 @@
                     <select class="custom-select" name="resource_option" id="selectRes">
                         <option value="none" selected>None</option>
                         {% for resource in fdata.resources %}
-                        <option value="{{resource}}" {% if resource_opt == resource %} selected {% endif %}>{{ resource }}</option>
+                        <option value="{{resource}}" {% if resource_opt==resource %} selected {% endif %}>{{ resource }}
+                        </option>
                         {% endfor %}
                     </select>
                     {% endif %}
@@ -48,7 +48,7 @@
                     <select class="custom-select" name="case_option" id="selectCase">
                         <option value="none" selected>None</option>
                         {% for case in fdata.cases %}
-                        <option value="{{case}}" {% if case_opt == case %} selected {% endif %}>{{ case }}</option>
+                        <option value="{{case}}" {% if case_opt==case %} selected {% endif %}>{{ case }}</option>
                         {% endfor %}
                     </select>
                     <input hidden name="file_name" value="{{file_name}}" />
@@ -95,7 +95,7 @@
                             <td>
                                 <form action="/discover/activity" method="POST">
                                     <input hidden name="file_name" value="{{value}}" />
-                                    <input class='btn btn-outline-dark' type="submit" value="Discover Process"/>
+                                    <input class='btn btn-outline-dark' type="submit" value="Discover Process" />
                                 </form>
                             </td>
                             <td> <button class='btn btn-outline-dark' onclick='caseFiltering({{value}})'>3D
@@ -118,34 +118,40 @@
                     </script>
                 </div>
                 <div class="col">
-                    <div id="scatter"></div>
+                    <div hidden id="activity_space">
+                        <form action="/view/activity/space" method="POST">
+                            <input id="activity_id" name="activity_id" value="" />
+                            <input id="see_space_graph" type="submit" />
+                        </form>
+                    </div>
+                    <div hidden id="activity_time">
+                        <form action="/view/activity/time" method="POST">
+                            <input id="activity_id" name="activity_id" value="" />
+                            <input id="see_time_graph" type="submit" />
+                        </form>
+                    </div>
+                    <div hidden id="activity_energy">
+                        <form action="/view/activity/energy" method="POST">
+                            <input id="activity_id" name="activity_id" value="" />
+                            <input id="see_energy_graph" type="submit" />
+                        </form>
+                    </div>
                 </div>
-
             </div>
-            <div class="row">
-                <div id="heatmap"></div>
-            </div>
-            <div class="row">
-                <div id="scatter3d"></div>
-
-            </div>
-
         </div>
-        <!--
-        <div class="col alert alert-secondary">
-            <div class="container">
-                <div class="btn-group">
-                    <button class="btn btn-secondary" onclick="discoverAll()" disabled>Discover All!</button>
-                </div>
-                <div class="btn-group">
-                    <button class="btn btn-secondary" onclick="scatterAll()" disabled>Scatter All!</button>
-                </div>
-                <div class="btn-group">
-                    <button class="btn btn-secondary" onclick="discoverAllPerformance()" disabled>Discover All
-                        Performance!</button>
-                </div>
+        <div class="row">
+            <div class="col">
+                <div id="space_div"></div>
             </div>
-        </div>-->
+            <div class="col">
+                <div id="time_div"></div>
+
+            </div>
+            <div class="col">
+                <div id="battery_div"></div>
+
+            </div>
+        </div>
     </div>
 </body>
 
