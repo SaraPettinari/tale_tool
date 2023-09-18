@@ -5,7 +5,7 @@ import webview
 import webbrowser
 import plotly.express as px
 
-from flask import Flask, render_template, jsonify, request, Response
+from flask import Flask, render_template, jsonify, request, Response, session
 from collections import Counter
 
 from src.xes_handler import merge_xes, csv_to_xes
@@ -14,6 +14,9 @@ from src.utils import log_to_dataframe, create_dfg
 
 server = Flask(__name__)
 server.config['SEND_FILE_MAX_AGE_DEFAULT'] = 1  # disable caching
+server.secret_key = b'_5#y2L"F4Q8z\n\xec]/'
+server.config['SECRET_KEY'] = os.urandom(24)
+
 
 files_dict = {}
 resp_list = []
@@ -37,6 +40,7 @@ def landing():
     return render_template('index.html')
 
 
+
 @server.route('/csv_processing')
 def csv_processing():
     return render_template('csv_parser.html')
@@ -51,8 +55,11 @@ def choose_path():
             resp_list.append(f.filename)
 
         data_dict[f.filename] = {}
+        
+    session['files'] = resp_list
+    session['fdata'] = data_dict[f.filename]
 
-    return render_template('index.html', files=resp_list, fdata=data_dict[f.filename])
+    return render_template('index.html')
 
 
 @server.route('/filter', methods=['POST'])
@@ -75,7 +82,10 @@ def get_resources():
     data_dict[file_name] = {
         'resources': resources_list, 'cases': cases_list}
 
-    return render_template('index.html', files=resp_list, file_name=file_name, fdata=data_dict[file_name])
+    session['fdata'] = data_dict[file_name]
+    session['file_name'] = file_name
+    
+    return render_template('index.html')
 
 
 @server.route('/discover/activity', methods=['GET', 'POST'])
@@ -94,18 +104,22 @@ def discover_dfg():
 
         (nodes, edges) = create_dfg(file_path,
                                     filtering_conditions)
+        
+        session['resource_opt'] = res_opt
+        session['case_opt'] = int(case_opt)
+        session['response_data'] = {'nodes': nodes, 'edges': edges}
 
-        return render_template('index.html', files=resp_list, file_name=file_name, fdata=data_dict[file_name],
-                               resource_opt=res_opt, case_opt=int(case_opt), response_data={'nodes': nodes, 'edges': edges})
+        return render_template('index.html')
 
     elif request.method == 'POST':
         file_name = request.form['file_name']
         file_path = os.path.join(server.root_path, 'docs', 'logs', file_name)
 
         (nodes, edges) = create_dfg(file_path)
+        session['response_data'] = {'nodes': nodes, 'edges': edges}
+        
 
-        return render_template('index.html', files=resp_list, fdata=data_dict[file_name],
-                               response_data={'nodes': nodes, 'edges': edges})
+        return render_template('index.html')
 
 
 @server.route('/csv/parse', methods=['POST'])
@@ -145,7 +159,7 @@ def see_activity_space():
     fig = px.scatter_3d(filtered_df, x='x', y='y', z='z',
                         color='case',
                         symbol='activity',
-                        title="3D Space Activity",
+                        title="Space for: " + activity_name,
                         range_x=[0, 10],
                         range_y=[0, 10],
                         range_z=[0, 2],
@@ -164,11 +178,14 @@ def see_activity_space():
             zerolinecolor="white",),),
     )
 
-    fig_path = os.getcwd() + "/templates/space_plot.html"
+    out_file = "space_plot.html"
+    fig_path = os.getcwd() + "/templates/" + out_file
     fig.write_html(fig_path)
-
-    return Response(status=204)
-    # return render_template('index.html')
+    
+    session['space_file'] = out_file
+    
+    #return Response(status=204)
+    return render_template('index.html')
 
 
 @server.route('/view/3Dscatter', methods=['POST'])

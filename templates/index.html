@@ -2,6 +2,8 @@
 <html>
 
 <head lang="en">
+    {% block head %}
+
     <title>Tale Miner</title>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
@@ -19,43 +21,50 @@
     <script src="https://unpkg.com/klayjs@0.4.1/klay.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/cytoscape-klay@3.1.4/cytoscape-klay.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/cytoscape-cxtmenu@3.5.0/cytoscape-cxtmenu.min.js"></script>
+    {% endblock %}
+
 </head>
 
 <body class="container-fluid">
     <nav class="navbar navbar-expand-lg navbar-dark navbar-light justify-content-center">
         <h1 class="navbar-brand" style="font-size: 40px;">Tale Analysis</h1>
     </nav>
+
     <div class="row mt-3">
-        <div class="col alert alert-secondary">
+        <div class="col card">
             <div class="container">
-                {% if files %}
-                <h4> Filtering </h4>
-                <hr>
-                <form id="filters" action="/discover/activity" method="GET">
-                    {% if fdata.resources %}
-                    <h5> Resources </h5>
-                    <select class="custom-select" name="resource_option" id="selectRes">
-                        <option value="none" selected>None</option>
-                        {% for resource in fdata.resources %}
-                        <option value="{{resource}}" {% if resource_opt==resource %} selected {% endif %}>{{ resource }}
-                        </option>
-                        {% endfor %}
-                    </select>
+                {% if session.files %}
+                <div class="card-header">
+                    Filtering
+                </div>
+                <div class="card-body">
+                    <form id="filters" action="/discover/activity" method="GET">
+                        {% if session.fdata.resources %}
+                        <h5> Resources </h5>
+                        <select class="custom-select" name="resource_option" id="selectRes">
+                            <option value="none" selected>None</option>
+                            {% for resource in session.fdata.resources %}
+                            <option value="{{resource}}" {% if resource_opt==resource %} selected {% endif %}>{{
+                                resource }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                        {% endif %}
+                        <hr>
+                        {% if session.fdata.cases %}
+                        <h5> Cases </h5>
+                        <select class="custom-select" name="case_option" id="selectCase">
+                            <option value="none" selected>None</option>
+                            {% for case in session.fdata.cases %}
+                            <option value="{{case}}" {% if case_opt==case %} selected {% endif %}>{{ case }}</option>
+                            {% endfor %}
+                        </select>
+                        <input hidden name="file_name" value="{{file_name}}" />
+                        {% endif %}
+                        <input type="submit" class="btn btn-outline-secondary" value="Apply Filters" />
+                    </form>
                     {% endif %}
-                    <hr>
-                    {% if fdata.cases %}
-                    <h5> Cases </h5>
-                    <select class="custom-select" name="case_option" id="selectCase">
-                        <option value="none" selected>None</option>
-                        {% for case in fdata.cases %}
-                        <option value="{{case}}" {% if case_opt==case %} selected {% endif %}>{{ case }}</option>
-                        {% endfor %}
-                    </select>
-                    <input hidden name="file_name" value="{{file_name}}" />
-                    {% endif %}
-                    <input type="submit" class="btn btn-outline-secondary" value="Apply Filters" />
-                </form>
-                {% endif %}
+                </div>
             </div>
         </div>
         <div class="col-10 ">
@@ -75,7 +84,7 @@
                 <div id="generated_xes_name"> </div>
                 <hr>
                 <!--<button onclick="toggleFullScreen()">Toggle fullscreen</button>-->
-                {% if files %}
+                {% if session.files %}
                 <div class="row">
                     <table id="files-table">
                         <tr>
@@ -83,7 +92,7 @@
                             <th></th>
                             <th></th>
                         </tr>
-                        {% for value in files %}
+                        {% for value in session.files %}
                         <tr>
                             <td> {{ value }}</td>
                             <td>
@@ -113,24 +122,24 @@
             <div class="row">
                 <div class="row frame-graph" id="cyto">
                     <script>
-                        const response_data = {{ response_data|default ("") | tojson }}
+                        const response_data = {{ session.response_data|default ("") | tojson }}
                         generate_graph(response_data)
                     </script>
                 </div>
-                <div class="col">
-                    <div hidden id="activity_space">
+                <div hidden class="col">
+                    <div id="activity_space">
                         <form action="/view/activity/space" method="POST">
                             <input id="activity_id" name="activity_id" value="" />
                             <input id="see_space_graph" type="submit" />
                         </form>
                     </div>
-                    <div hidden id="activity_time">
+                    <div id="activity_time">
                         <form action="/view/activity/time" method="POST">
                             <input id="activity_id" name="activity_id" value="" />
                             <input id="see_time_graph" type="submit" />
                         </form>
                     </div>
-                    <div hidden id="activity_energy">
+                    <div id="activity_energy">
                         <form action="/view/activity/energy" method="POST">
                             <input id="activity_id" name="activity_id" value="" />
                             <input id="see_energy_graph" type="submit" />
@@ -139,17 +148,32 @@
                 </div>
             </div>
         </div>
-        <div class="row">
-            <div class="col">
-                <div id="space_div"></div>
-            </div>
-            <div class="col">
-                <div id="time_div"></div>
-
-            </div>
-            <div class="col">
-                <div id="battery_div"></div>
-
+        <div class="container">
+            <div class="row">
+                <div class="col-4">
+                    <div id="space_div" class="card">
+                        <div class="card-body">
+                            <h5 class="card-title">Space Perspective</h5>
+                            {% if session.space_file %}
+                            {% include session.space_file ignore missing %}
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                <div class="col-4">
+                    <div hidden id="time_div" class="card" style="visibility: hidden;">
+                        <div class="card-body">
+                            <h5 class="card-title">Time Perspective</h5>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-4">
+                    <div hidden id="battery_div" class="card" style="visibility: hidden;">
+                        <div class="card-body">
+                            <h5 class="card-title">Battery Perspective</h5>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>

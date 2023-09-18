@@ -2,6 +2,7 @@ uploaded_files = null;
 
 
 function generate_graph(data) {
+    console.log(data)
     nodes = []
     console.log(data)
     for (n in data.nodes) {
@@ -141,8 +142,8 @@ function generate_graph(data) {
                 select: function (ele) { // a function to execute when the command is selected
                     document.getElementById("activity_id").setAttribute("value", ele.id())
                     document.getElementById("see_space_graph").click();
-                    const scatterDiv = document.getElementById("space_div");
-                    scatterDiv.innerHTML = '<object data="/templates/splace_plot.html"  width="1400"  height="1400"></object>';
+                    var scatterDiv = document.getElementById("space_div")
+                    scatterDiv.style.visibility = 'visible';
                 },
                 hover: function (ele) { // a function to execute when the command is hovered
                     console.log(ele.id()) // `ele` holds the reference to the active element
