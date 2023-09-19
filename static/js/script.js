@@ -251,3 +251,9 @@ function showHide(div) {
         x.style.visibility = 'hidden';
     }
 }
+
+function deleteRow(t) {
+    var row = t.parentNode.parentNode.parentNode;
+    console.log(row)
+    document.getElementById("files-table").deleteRow(row.rowIndex);
+  }

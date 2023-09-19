@@ -32,12 +32,16 @@ def add_header(response):
     return response
 
 
-@server.route('/')
-def landing():
-    """
-    Render index.html. Initialization is performed asynchronously in initialize() function
-    """
+@server.route('/', methods=['GET','POST'])
+def init():
+    if request.method == 'POST':
+        file_name = request.form['file_name']
+        if file_name in data_dict.keys():
+            data_dict.pop(file_name)
+            session['files'] = data_dict
+        
     return render_template('index.html')
+
 
 
 
@@ -120,6 +124,8 @@ def discover_dfg():
         
 
         return render_template('index.html')
+
+
 
 
 @server.route('/csv/parse', methods=['POST'])

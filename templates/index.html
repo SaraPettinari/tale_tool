@@ -13,7 +13,12 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" type="text/css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.3.1/dist/css/bootstrap.min.css"
         integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css"
+        integrity="sha512-z3gLpd7yknf1YoNbCzqRKc4qyor8gaKU1qmn+CShxbuBusANI9QpRohGBreCFkKxLhei6S9CQXFEbbKuqLg0DA=="
+        crossorigin="anonymous" referrerpolicy="no-referrer" />
     <!-- JavaScript -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.1/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://code.jquery.com/jquery-3.6.0.slim.min.js"
         integrity="sha256-u7e5khyithlIdTpu22PHhENmPcRdFiHRjhAuHcs05RI=" crossorigin="anonymous"></script>
     <script type="text/javascript" src="{{ url_for('static', filename='js/script.js') }}">    </script>
@@ -30,12 +35,16 @@
         <h1 class="navbar-brand" style="font-size: 40px;">Tale Analysis</h1>
     </nav>
 
-    <div class="row mt-3">
-        <div class="col card">
-            <div class="container">
-                {% if session.files %}
+    <div class="offcanvas offcanvas-start" id="demo">
+        <div class="offcanvas-header">
+            <h1 class="offcanvas-title">Handle {{session.file_name}}</h1>
+            <button type="button" class="btn-close" data-bs-dismiss="offcanvas"></button>
+        </div>
+        <div class="offcanvas-body">
+            {% if session.files %}
+            <div class="container card">
                 <div class="card-header">
-                    Filtering
+                    <h4> Filtering</h4>
                 </div>
                 <div class="card-body">
                     <form id="filters" action="/discover/activity" method="GET">
@@ -49,129 +58,142 @@
                             </option>
                             {% endfor %}
                         </select>
-                        {% endif %}
                         <hr>
+                        {% endif %}
                         {% if session.fdata.cases %}
                         <h5> Cases </h5>
                         <select class="custom-select" name="case_option" id="selectCase">
                             <option value="none" selected>None</option>
                             {% for case in session.fdata.cases %}
-                            <option value="{{case}}" {% if case_opt==case %} selected {% endif %}>{{ case }}</option>
+                            <option value="{{case}}" {% if case_opt==case %} selected {% endif %}>{{ case }}
+                            </option>
                             {% endfor %}
                         </select>
-                        <input hidden name="file_name" value="{{file_name}}" />
+                        <input hidden name="file_name" value="{{session.file_name}}" />
                         {% endif %}
                         <input type="submit" class="btn btn-outline-secondary" value="Apply Filters" />
                     </form>
+                </div>
+            </div>{% endif %}
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="row mt-3">
+            <div class="col">
+                <div id="parameters" class="container">
+                    <form action="/select/logs" method="POST" enctype="multipart/form-data">
+                        <div class="row">
+                            <div class="col-6"><label for="file">Select Event Log Files</label>
+                                <input class="btn btn-outline-secondary" type="file" name="file" multiple />
+                            </div>
+                            <div class="col-2"><input class="btn btn-outline-secondary" type="submit" type="button"
+                                    value="Upload" /> </div>
+                            <div class="col-2">
+                                <button class="btn btn-outline-secondary" onclick="csvParser()">CSV parser</button>
+                            </div>
+                        </div>
+                    </form>
+                    <div id="generated_xes_name"> </div>
+                    <hr>
+                    <!--<button onclick="toggleFullScreen()">Toggle fullscreen</button>-->
+                    {% if session.files %}
+                    <div class="row">
+                        <table id="files-table">
+                            <tr>
+                                <th>Event Log</th>
+                                <th></th>
+                                <th></th>
+                            </tr>
+                            {% for value in session.files %}
+                            <tr id="{{value}}">
+                                <td> {{ value }}</td>
+                                <td>
+                                    <form action="/filter" method="POST">
+                                        <input hidden name="file_name" value="{{value}}" />
+                                        <input class='btn btn-outline-dark' type="submit" value="Create Filters" />
+                                    </form>
+                                </td>
+                                <td>
+                                    <form action="/discover/activity" method="POST">
+                                        <input hidden name="file_name" value="{{value}}" />
+                                        <input class='btn btn-outline-dark' type="submit" value="Discover Process" />
+                                    </form>
+                                </td>
+                                <td>
+                                    <button class="btn btn-outline-primary" type="button" data-bs-toggle="offcanvas"
+                                        data-bs-target="#demo">
+                                        Handle Data
+                                    </button>
+                                </td>
+                                <td>
+                                    <form action="/" method="POST">
+                                        <input hidden name="file_name" value="{{value}}" />
+                                        <button type="submit" class="btnn" value="Delete" id="delete-btn"><i
+                                            class="fa fa-close"></i>
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </table>
+                    </div>
                     {% endif %}
                 </div>
-            </div>
-        </div>
-        <div class="col-10 ">
-            <div id="parameters" class="container">
-                <form action="/select/logs" method="POST" enctype="multipart/form-data">
-                    <div class="row">
-                        <div class="col-6"><label for="file">Select Event Log Files</label>
-                            <input class="btn btn-outline-secondary" type="file" name="file" multiple />
-                        </div>
-                        <div class="col-2"><input class="btn btn-outline-secondary" type="submit" type="button"
-                                value="Upload" /> </div>
-                        <div class="col-2">
-                            <button class="btn btn-outline-secondary" onclick="csvParser()">CSV parser</button>
-                        </div>
-                    </div>
-                </form>
-                <div id="generated_xes_name"> </div>
-                <hr>
-                <!--<button onclick="toggleFullScreen()">Toggle fullscreen</button>-->
-                {% if session.files %}
-                <div class="row">
-                    <table id="files-table">
-                        <tr>
-                            <th>Event Log</th>
-                            <th></th>
-                            <th></th>
-                        </tr>
-                        {% for value in session.files %}
-                        <tr>
-                            <td> {{ value }}</td>
-                            <td>
-                                <form action="/filter" method="POST">
-                                    <input hidden name="file_name" value="{{value}}" />
-                                    <input class='btn btn-outline-dark' type="submit" value="Create Filters" />
-                                </form>
-                            </td>
-                            <td>
-                                <form action="/discover/activity" method="POST">
-                                    <input hidden name="file_name" value="{{value}}" />
-                                    <input class='btn btn-outline-dark' type="submit" value="Discover Process" />
-                                </form>
-                            </td>
-                            <td> <button class='btn btn-outline-dark' onclick='caseFiltering({{value}})'>3D
-                                    Scatter</button>
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </table>
-                </div>
-                {% endif %}
-            </div>
-            <!--<div class="frame-graph">
+                <!--<div class="frame-graph">
                 <svg width=960 height=600></svg>
             </div> -->
-            <div class="row">
-                <div class="row frame-graph" id="cyto">
-                    <script>
-                        const response_data = {{ session.response_data|default ("") | tojson }}
-                        generate_graph(response_data)
-                    </script>
-                </div>
-                <div hidden class="col">
-                    <div id="activity_space">
-                        <form action="/view/activity/space" method="POST">
-                            <input id="activity_id" name="activity_id" value="" />
-                            <input id="see_space_graph" type="submit" />
-                        </form>
+                <div class="row card-columns">
+                    <div class="card">
+                        <div class="row card-body frame-graph" id="cyto">
+                            <script>
+                                const response_data = {{ session.response_data|default ("") | tojson }}
+                                generate_graph(response_data)
+                            </script>
+                        </div>
                     </div>
-                    <div id="activity_time">
-                        <form action="/view/activity/time" method="POST">
-                            <input id="activity_id" name="activity_id" value="" />
-                            <input id="see_time_graph" type="submit" />
-                        </form>
-                    </div>
-                    <div id="activity_energy">
-                        <form action="/view/activity/energy" method="POST">
-                            <input id="activity_id" name="activity_id" value="" />
-                            <input id="see_energy_graph" type="submit" />
-                        </form>
+                    <div hidden class="col-10">
+                        <div id="activity_space">
+                            <form action="/view/activity/space" method="POST">
+                                <input id="activity_id" name="activity_id" value="" />
+                                <input id="see_space_graph" type="submit" />
+                            </form>
+                        </div>
+                        <div id="activity_time">
+                            <form action="/view/activity/time" method="POST">
+                                <input id="activity_id" name="activity_id" value="" />
+                                <input id="see_time_graph" type="submit" />
+                            </form>
+                        </div>
+                        <div id="activity_energy">
+                            <form action="/view/activity/energy" method="POST">
+                                <input id="activity_id" name="activity_id" value="" />
+                                <input id="see_energy_graph" type="submit" />
+                            </form>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
-        <div class="container">
-            <div class="row">
-                <div class="col-4">
-                    <div id="space_div" class="card">
-                        <div class="card-body">
-                            <h5 class="card-title">Space Perspective</h5>
-                            {% if session.space_file %}
-                            {% include session.space_file ignore missing %}
-                            {% endif %}
-                        </div>
+
+        <div class="row mt-3">
+            <div class="card-columns">
+                <div id="space_div" class="card" style="visibility: hidden;">
+                    <div class="card-body">
+                        <h5 class="card-title">Space Perspective</h5>
+                        {% if session.space_file %}
+                        {% include session.space_file ignore missing %}
+                        {% endif %}
                     </div>
                 </div>
-                <div class="col-4">
-                    <div hidden id="time_div" class="card" style="visibility: hidden;">
-                        <div class="card-body">
-                            <h5 class="card-title">Time Perspective</h5>
-                        </div>
+                <div id="time_div" class="card" style="visibility: hidden;">
+                    <div class="card-body">
+                        <h5 class="card-title">Time Perspective</h5>
                     </div>
                 </div>
-                <div class="col-4">
-                    <div hidden id="battery_div" class="card" style="visibility: hidden;">
-                        <div class="card-body">
-                            <h5 class="card-title">Battery Perspective</h5>
-                        </div>
+                <div id="battery_div" class="card" style="visibility: hidden;">
+                    <div class="card-body">
+                        <h5 class="card-title">Battery Perspective</h5>
                     </div>
                 </div>
             </div>
