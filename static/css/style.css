@@ -1,78 +1,241 @@
 #mynetwork {
-    width: 900px;
-    height: 600px;
-    border: 1px solid lightgray;
-    text-align: center;
+  width: 900px;
+  height: 600px;
+  border: 1px solid lightgray;
+  text-align: center;
 }
 
 .banner {
-    padding: 12px;
-    background-color: #17a2b8;
-    color: white;
+  padding: 12px;
+  background-color: #17a2b8;
+  color: white;
 }
 
 .closebtn {
-    margin-left: 12px;
-    color: white;
-    font-weight: bold;
-    float: right;
-    font-size: 22px;
-    line-height: 20px;
-    cursor: pointer;
-    transition: 0.3s;
+  margin-left: 12px;
+  color: white;
+  font-weight: bold;
+  float: right;
+  font-size: 22px;
+  line-height: 20px;
+  cursor: pointer;
+  transition: 0.3s;
 }
 
 .closebtn:hover {
-    color: black;
+  color: black;
 }
 
 body {
-    color: #333;
-    font-size: 14pt;
+  color: #333;
+  font-size: 14pt;
 }
 
 h1 {
-    font-size: 24pt;
-}
-
-.node rect {
-    stroke: #333;
-    fill: #fff;
-}
-
-.edgePath path {
-    stroke: #333;
-    fill: #333;
-    stroke-width: 1.5px;
+  font-size: 24pt;
 }
 
 .navbar-light {
-    background-color: #8A33FF;
+  background-color: #8A33FF;
 }
 
 
 .btn {
-    color: #8A33FF;
-    border-color: #8A33FF;
+  color: #8A33FF;
+  border-color: #8A33FF;
 }
 
 .frame-graph {
-    width: 600px;
-    height: 600px;
-    resize: both;
-    overflow: auto;
+  width: 100%;
+  height: 600px;
+  resize: both;
+  overflow: auto;
 }
 
 .btnn {
-    background-color: transparent;
-    border: none; /* Remove borders */
-    color: #8A33FF; /* White text */
-    padding: 12px 16px; /* Some padding */
-    font-size: 16px; /* Set a font size */
-    cursor: pointer; /* Mouse pointer on hover */
-  }
-  
-  /* Darker background on mouse-over */
-  .btnn:hover {
-    color: rgb(47, 2, 83);
-  }
+  background-color: transparent;
+  border: none;
+  /* Remove borders */
+  color: #8A33FF;
+  /* White text */
+  padding: 12px 16px;
+  /* Some padding */
+  font-size: 16px;
+  /* Set a font size */
+  cursor: pointer;
+  /* Mouse pointer on hover */
+}
+
+/* Darker background on mouse-over */
+.btnn:hover {
+  color: rgb(47, 2, 83);
+}
+
+
+/* Switch button */
+.toggle {
+  --width: 80px;
+  --height: calc(var(--width) / 3);
+
+  position: relative;
+  display: inline-block;
+  width: var(--width);
+  height: var(--height);
+  box-shadow: 0px 1px 3px rgba(0, 0, 0, 0.3);
+  border-radius: var(--height);
+  cursor: pointer;
+}
+
+.toggle input {
+  display: none;
+}
+
+.toggle .slider {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  border-radius: var(--height);
+  background-color: #ccc;
+  transition: all 0.4s ease-in-out;
+}
+
+.toggle .slider::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: calc(var(--height));
+  height: calc(var(--height));
+  border-radius: calc(var(--height) / 2);
+  background-color: #fff;
+  box-shadow: 0px 1px 3px rgba(0, 0, 0, 0.3);
+  transition: all 0.4s ease-in-out;
+}
+
+.toggle input:checked+.slider {
+  background-color: #f37521;
+}
+
+.toggle input:checked+.slider::before {
+  transform: translateX(calc(var(--width) - var(--height)));
+}
+
+.toggle .labels {
+  position: absolute;
+  top: 5px;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  font-size: 12px;
+  font-family: sans-serif;
+  transition: all 0.4s ease-in-out;
+  overflow: hidden;
+}
+
+.toggle .labels::after {
+  content: attr(data-off);
+  position: absolute;
+  right: 5px;
+  color: #4d4d4d;
+  opacity: 1;
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.4);
+  transition: all 0.4s ease-in-out;
+}
+
+.toggle .labels::before {
+  content: attr(data-on);
+  position: absolute;
+  left: calc(var(--height) - var(--width) + 2px);
+  color: #ffffff;
+  opacity: 0;
+  text-shadow: 1px 1px 2px rgba(255, 255, 255, 0.4);
+  transition: all 0.4s ease-in-out;
+}
+
+.toggle input:checked~.labels::after {
+  opacity: 0;
+  transform: translateX(calc(var(--width) - var(--height)));
+}
+
+.toggle input:checked~.labels::before {
+  opacity: 1;
+  transform: translateX(calc(var(--width) - var(--height)));
+}
+
+/* Node styles */
+.node rect {
+  stroke: #333;
+  stroke-width: 2px;
+  fill: #fff;
+}
+
+.node text {
+  font-family: 'Arial', sans-serif;
+  font-size: 14px;
+  fill: #333;
+  /* Text color */
+}
+
+/* Edge styles */
+.edgePath path {
+  stroke: #999; /* Edge color */
+  stroke-width: 2px;
+  transition: stroke 0.3s; /* Add transition for smoother color change */
+}
+
+/* Hover effect for nodes */
+.node:hover rect {
+  fill: #8A33FF;
+  stroke-width: 4px;
+}
+
+.node:hover text {
+  fill: #fff; /* Change text color on hover */
+}
+
+/* Hover effect for edges */
+.edgePath:hover path {
+  stroke: #8A33FF;
+  stroke-width: 4px;
+}
+
+
+svg {
+  width: 100%;
+  height: 100%;
+}
+
+#graph-container {
+  width: 100%;
+  height: 600px;
+}
+
+.context-menu {
+  display: none;
+  position: absolute;
+  background-color: #fff;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  border: 1px solid #ccc;
+  padding: 5px;
+  z-index: 1000;
+}
+
+.context-menu-option {
+  cursor: pointer;
+  padding: 5px;
+  margin: 2px 0;
+  transition: background-color 0.3s;
+}
+
+.context-menu-option:hover {
+  background-color: #f0f0f0;
+}
+
+.context-menu-title {
+  font-size: 16px;
+  font-weight: bold;
+  padding: 8px 16px;
+  border-bottom: 1px solid #ccc;
+}

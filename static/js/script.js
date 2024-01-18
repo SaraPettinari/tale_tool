@@ -1,5 +1,152 @@
 uploaded_files = null;
 
+function generate_dagre(data) {
+    console.log(data)
+    nodes = []
+    console.log(data)
+
+    var g = new dagre.graphlib.Graph({
+        multigraph: true,
+        compound: true,
+        multiedgesep: 10,
+        multiranksep: 50
+    });
+
+    console.log(g)
+
+    // Set an object for the graph label
+    g.setGraph({ rankdir: 'TB', nodesep: 25 });
+
+    // Default to assigning a new object as a label for each new edge.
+    g.setDefaultEdgeLabel(function () { return {}; });
+
+    dagre.layout(g);
+
+
+    for (n in data.nodes) {
+        //node_data.push({ id: in_data.nodes[n]['Event_Id'], properties: in_data.nodes[n] })
+        node = data.nodes[n]
+        if (node.label != null) {
+            node.label = node.label.replaceAll("_", "\n")
+        }
+
+        g.setNode(node.id, { label: node.label })
+    }
+
+    g.nodes().forEach(function (v) {
+        var node = g.node(v);
+        // Round the corners of the nodes
+        node.rx = node.ry = 5;
+    });
+
+    edges = []
+    for (e in data.edges) {
+        edge = data.edges[e]
+        edge_label = edge.label
+        //        edge_properties = edge.edge_properties
+        //"edge_weight": 1,   "CorrelationType": "Message",
+        /*
+        edge_weight = edge_properties.edge_weight
+        edge_info = edge_weight + '(' + edge_properties.CorrelationType + ')\n:' + edge_label
+        visibility = 'visible'
+        if ((edge_weight > 0 && edge_weight < 6) || (edge_weight > 10 && edge_weight < 50)) {
+            visibility = 'hidden'
+        }
+        if (edge_weight >= 4) {
+            edge_weight = edge_weight / 20
+        }
+        if (edge_weight == '') {
+            edge_weight = 1
+        }*/
+        g.setEdge(edge.from, edge.to, {
+            label: edge_label,
+            name: edge.from + '-' + edge_label + '-' + edge.to
+        })
+    }
+
+
+    elements = nodes.concat(edges)
+    console.log(nodes)
+
+    const svg = d3.select('#graph-container').append('svg');
+    const svgGroup = svg.append('g');
+
+    // Create a zoom behavior
+    const zoom = d3.zoom().on('zoom', (event) => {
+        svgGroup.attr('transform', event.transform);
+    });
+
+    // Apply zoom to the SVG container
+    svg.call(zoom);
+
+    // Render the graph
+    const render = new dagreD3.render();
+    render(svgGroup, g);
+
+    // Add unique IDs to the edge paths during rendering
+    svgGroup.selectAll('g.edgePath path')
+        .attr('id', (edgeId) => g.edge(edgeId).name);
+
+    // Handle double click on nodes
+    svgGroup.selectAll('g.node')
+        .on('dblclick', function (event, nodeId) {
+            // Reset the style of all edges
+            event.stopPropagation(); // Prevent click event from triggering as well
+
+            // Reset the style of all edges
+            svgGroup.selectAll('g.edgePath path').style('stroke', '#999');
+
+            // Highlight outgoing edges from the double-clicked node
+            g.outEdges(nodeId).forEach(edge => {
+                svgGroup.selectAll(`g.edgePath path[id="${g.edge(edge).name}"]`).style('stroke', 'red');
+            });
+            g.inEdges(nodeId).forEach(edge => {
+                svgGroup.selectAll(`g.edgePath path[id="${g.edge(edge).name}"]`).style('stroke', 'blue');
+            });
+        });
+
+    const contextMenu = d3.select('#context-menu');
+    const contextMenuOptions = contextMenu.selectAll('.context-menu-option');
+
+    // Handle right-click on nodes to show the context menu
+    svgGroup.selectAll('g.node')
+        .on('contextmenu', function (event, nodeId) {
+            document.getElementById("activity_id").setAttribute("value", nodeId)
+
+            event.preventDefault(); // Prevent the default context menu
+            event.stopPropagation(); // Stop propagation to prevent triggering other click events
+
+            // Position the context menu next to the node
+            contextMenu.style('left', event.layerX + 5 + 'px');
+            contextMenu.style('top', event.layerY + 'px');
+
+            // Show the context menu
+            contextMenu.style('display', 'block');
+
+            // Handle context menu option clicks
+            contextMenuOptions.on('click', function (optionId) {
+                // Perform actions based on the selected option
+                var option = optionId.srcElement.id
+
+                option = option.replace('-menu', '')
+
+                // Hide the context menu
+                contextMenu.style('display', 'none');
+
+                // Trigger the backend
+                document.getElementById(option).setAttribute("value", true)
+                console.log(document.getElementById(option))
+                document.getElementById("see_" + option + "_graph").click();
+            });
+        });
+
+    // Hide the context menu on document click
+    d3.select(document).on('click', function () {
+        contextMenu.style('display', 'none');
+        svgGroup.selectAll('g.edgePath path').style('stroke', '#999');
+
+    });
+}
 
 function generate_graph(data) {
     console.log(data)
@@ -63,8 +210,8 @@ function generate_graph(data) {
                 style: {
                     'label': 'data(label)',
                     'width': 1,
-                    'line-color': 'data(color)',
-                    'target-arrow-color': 'data(color)',
+                    //'line-color': 'data(color)',
+                    //'target-arrow-color': 'data(color)',
                     'target-arrow-shape': 'triangle',
                     'curve-style': 'bezier',
                     'text-background-opacity': 1,
@@ -73,7 +220,6 @@ function generate_graph(data) {
                     'loop-sweep': '-45deg',
                     'control-point-step-size': 100,
                     'segment-distances': "50 -50 20",
-
                 }
             }
         ],
@@ -96,7 +242,7 @@ function generate_graph(data) {
                 cycleBreaking: 'INTERACTIVE', // Strategy for cycle breaking. Cycle breaking looks for cycles in the graph and determines which edges to reverse to break the cycles. Reversed edges will end up pointing to the opposite direction of regular edges (that is, reversed edges will point left if edges usually point right).
                 /* GREEDY This algorithm reverses edges greedily. The algorithm tries to avoid edges that have the Priority property set.
                 INTERACTIVE The interactive algorithm tries to reverse edges that already pointed leftwards in the input graph. This requires node and port coordinates to have been set to sensible values.*/
-                direction: 'DOWN', // Overall direction of edges: horizontal (right / left) or vertical (down / up)
+                direction: 'RIGHT', // Overall direction of edges: horizontal (right / left) or vertical (down / up)
                 /* UNDEFINED, RIGHT, LEFT, DOWN, UP */
                 edgeRouting: 'ORTHOGONAL', // Defines how edges are routed (POLYLINE, ORTHOGONAL, SPLINES)
                 edgeSpacingFactor: 1.5, // Factor by which the object spacing is multiplied to arrive at the minimal spacing between edges.
@@ -122,7 +268,7 @@ function generate_graph(data) {
                 randomizationSeed: 1, // Seed used for pseudo-random number generators to control the layout algorithm; 0 means a new seed is generated
                 routeSelfLoopInside: false, // Whether a self-loop is routed around or inside its node.
                 separateConnectedComponents: true, // Whether each connected component should be processed separately
-                spacing: 20, // Overall setting for the minimal amount of space to be left between objects
+                spacing: 10, // Overall setting for the minimal amount of space to be left between objects
                 thoroughness: 25 // How much effort should be spent to produce a nice layout..
             }
         }
@@ -141,9 +287,8 @@ function generate_graph(data) {
                 contentStyle: {}, // css key:value pairs to set the command's css in js if you want
                 select: function (ele) { // a function to execute when the command is selected
                     document.getElementById("activity_id").setAttribute("value", ele.id())
+                    document.getElementById("space").setAttribute("value", true)
                     document.getElementById("see_space_graph").click();
-                    var scatterDiv = document.getElementById("space_div")
-                    scatterDiv.style.visibility = 'visible';
                 },
                 hover: function (ele) { // a function to execute when the command is hovered
                     console.log(ele.id()) // `ele` holds the reference to the active element
@@ -155,7 +300,9 @@ function generate_graph(data) {
                 content: 'Time', // html/text content to be displayed in the menu
                 contentStyle: {}, // css key:value pairs to set the command's css in js if you want
                 select: function (ele) { // a function to execute when the command is selected
-                    console.log(ele.id()) // `ele` holds the reference to the active element
+                    document.getElementById("activity_id").setAttribute("value", ele.id())
+                    document.getElementById("time").setAttribute("value", true)
+                    document.getElementById("see_time_graph").click();
                 },
                 hover: function (ele) { // a function to execute when the command is hovered
                     console.log(ele.id()) // `ele` holds the reference to the active element
@@ -256,4 +403,19 @@ function deleteRow(t) {
     var row = t.parentNode.parentNode.parentNode;
     console.log(row)
     document.getElementById("files-table").deleteRow(row.rowIndex);
-  }
+}
+
+
+
+function checkToggle() {
+    var divtoggle = document.getElementById("space_div")
+    if (divtoggle != null) {
+        const toggle = document.querySelector('.toggle');
+
+        toggle.addEventListener('click', () => {
+            console.log('sono qui :)')
+        });
+    }
+}
+
+setInterval(checkToggle, 5000);

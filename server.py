@@ -4,12 +4,17 @@ import os
 import webview
 import webbrowser
 import plotly.express as px
+import plotly.graph_objects as go
+import pandas as pd
+
 
 from flask import Flask, render_template, jsonify, request, Response, session
 from collections import Counter
+from functools import reduce
 
 from src.xes_handler import merge_xes, csv_to_xes
 from src.utils import log_to_dataframe, create_dfg
+from src.plot_creation import space_plot, time_plot
 
 
 server = Flask(__name__)
@@ -32,17 +37,16 @@ def add_header(response):
     return response
 
 
-@server.route('/', methods=['GET','POST'])
+@server.route('/', methods=['GET', 'POST'])
 def init():
     if request.method == 'POST':
+        session['plot_file'] = {}
         file_name = request.form['file_name']
         if file_name in data_dict.keys():
             data_dict.pop(file_name)
             session['files'] = data_dict
-        
+
     return render_template('index.html')
-
-
 
 
 @server.route('/csv_processing')
@@ -59,7 +63,7 @@ def choose_path():
             resp_list.append(f.filename)
 
         data_dict[f.filename] = {}
-        
+
     session['files'] = resp_list
     session['fdata'] = data_dict[f.filename]
 
@@ -88,7 +92,7 @@ def get_resources():
 
     session['fdata'] = data_dict[file_name]
     session['file_name'] = file_name
-    
+
     return render_template('index.html')
 
 
@@ -108,7 +112,7 @@ def discover_dfg():
 
         (nodes, edges) = create_dfg(file_path,
                                     filtering_conditions)
-        
+
         session['resource_opt'] = res_opt
         session['case_opt'] = int(case_opt)
         session['response_data'] = {'nodes': nodes, 'edges': edges}
@@ -121,11 +125,8 @@ def discover_dfg():
 
         (nodes, edges) = create_dfg(file_path)
         session['response_data'] = {'nodes': nodes, 'edges': edges}
-        
 
         return render_template('index.html')
-
-
 
 
 @server.route('/csv/parse', methods=['POST'])
@@ -154,44 +155,35 @@ def discover_all():
     return jsonify({'nodes': nodes, 'edges': edges, 'file_key': key})
 
 
-
-@server.route('/view/activity/space', methods=['POST'])
-def see_activity_space():
-    activity_name = request.form['activity_id']
+@server.route('/view/activity', methods=['GET'])
+def see_plot():
+    args = request.args
+    activity_name = args.get('activity_id')
     file_path = os.path.join(server.root_path, 'docs', 'logs', file_name)
-    df = log_to_dataframe(file_path)
-    filtered_df = df[df['activity'] == activity_name]
+    session['current_activity'] = activity_name
+    # space plot generation
+    if args.get('space'):
+        fig_path = space_plot(activity_name, file_path)       
+        if not 'plot_file' in session.keys():
+            session['plot_file'] = {activity_name: {'space': fig_path}}
+        elif not activity_name in session['plot_file'].keys():
+            session['plot_file'][activity_name] = {'space': fig_path}
+        else:
+            session['plot_file'][activity_name]['space'] = fig_path
+    # time plot generation
+    elif args.get('time'):          
+        fig_path = time_plot(activity_name, file_path)
+        if not 'plot_file' in session.keys():
+            session['plot_file'] = {activity_name: {'time': fig_path}}
+        elif not activity_name in session['plot_file'].keys():
+            session['plot_file'][activity_name] = {'time': fig_path}
+        else:
+            session['plot_file'][activity_name]['time'] = fig_path
 
-    fig = px.scatter_3d(filtered_df, x='x', y='y', z='z',
-                        color='case',
-                        symbol='activity',
-                        title="Space for: " + activity_name,
-                        range_x=[0, 10],
-                        range_y=[0, 10],
-                        range_z=[0, 2],
-                        )
 
-    fig.update_layout(scene=dict(
-        yaxis=dict(
-            backgroundcolor="rgb(227, 227, 250)",
-            gridcolor="white",
-            showbackground=True,
-            zerolinecolor="white"),
-        zaxis=dict(
-            backgroundcolor="rgb(227, 227, 227)",
-            gridcolor="white",
-            showbackground=True,
-            zerolinecolor="white",),),
-    )
-
-    out_file = "space_plot.html"
-    fig_path = os.getcwd() + "/templates/" + out_file
-    fig.write_html(fig_path)
-    
-    session['space_file'] = out_file
-    
-    #return Response(status=204)
+    # return Response(status=204)
     return render_template('index.html')
+
 
 
 @server.route('/view/3Dscatter', methods=['POST'])
@@ -312,6 +304,7 @@ def create_2dscatter():
     response = {'x': x, 'y': y, 'activity': activity}
     return jsonify(response)
 
+
 '''
 @server.route('/discover/all/performance', methods=['POST'])
 def discover_all_p():
@@ -334,6 +327,7 @@ def discover_performance():
 
     return jsonify({'nodes': nodes, 'edges': edges, 'file_key': file_key})
 '''
+
 
 @server.route('/filter/resource', methods=['GET', 'POST'])
 def filter_resource():

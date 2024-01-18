@@ -26,6 +26,11 @@
     <script src="https://unpkg.com/klayjs@0.4.1/klay.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/cytoscape-klay@3.1.4/cytoscape-klay.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/cytoscape-cxtmenu@3.5.0/cytoscape-cxtmenu.min.js"></script>
+
+    <script src="https://cdn.jsdelivr.net/npm/dagre@0.8.5/dist/dagre.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/d3@7.8.5/dist/d3.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/dagre-d3@0.6.4/dist/dagre-d3.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/d3-zoom@3.0.0/dist/d3-zoom.min.js"></script>
     {% endblock %}
 
 </head>
@@ -130,7 +135,7 @@
                                     <form action="/" method="POST">
                                         <input hidden name="file_name" value="{{value}}" />
                                         <button type="submit" class="btnn" value="Delete" id="delete-btn"><i
-                                            class="fa fa-close"></i>
+                                                class="fa fa-close"></i>
                                         </button>
                                     </form>
                                 </td>
@@ -140,64 +145,80 @@
                     </div>
                     {% endif %}
                 </div>
-                <!--<div class="frame-graph">
-                <svg width=960 height=600></svg>
-            </div> -->
+                <!-- Context menu -->
+                <div id="context-menu" class="context-menu">
+                    <div class="context-menu-title">Measures</div>
+                    <div id="space-menu" class="context-menu-option">Space</div>
+                    <div id="time-menu" class="context-menu-option">Time</div>
+                    <div id="energy-menu" class="context-menu-option">Energy</div>
+                </div>
+                <div id="graph-container"></div>
                 <div class="row card-columns">
                     <div class="card">
-                        <div class="row card-body frame-graph" id="cyto">
-                            <script>
-                                const response_data = {{ session.response_data|default ("") | tojson }}
-                                generate_graph(response_data)
-                            </script>
-                        </div>
+                        <!--<div class="row card-body frame-graph" id="cyto">-->
+                        <script>
+                            const response_data = {{ session.response_data|default ("") | tojson }}
+                            generate_dagre(response_data)
+                        </script>
+                        <!-- </div>-->
                     </div>
                     <div hidden class="col-10">
-                        <div id="activity_space">
-                            <form action="/view/activity/space" method="POST">
-                                <input id="activity_id" name="activity_id" value="" />
+                        <form action="/view/activity" method="GET">
+                            <input id="activity_id" name="activity_id" value="" />
+                            <div id="activity_space">
+                                <input id="space" name="space" value="" />
                                 <input id="see_space_graph" type="submit" />
-                            </form>
-                        </div>
-                        <div id="activity_time">
-                            <form action="/view/activity/time" method="POST">
-                                <input id="activity_id" name="activity_id" value="" />
+                            </div>
+                            <div id="activity_time">
+                                <input id="time" name="time" value="" />
                                 <input id="see_time_graph" type="submit" />
-                            </form>
-                        </div>
-                        <div id="activity_energy">
-                            <form action="/view/activity/energy" method="POST">
-                                <input id="activity_id" name="activity_id" value="" />
+                            </div>
+                            <div id="activity_energy">
+                                <input id="energy" name="energy" value="" />
                                 <input id="see_energy_graph" type="submit" />
-                            </form>
-                        </div>
+                            </div>
+                        </form>
                     </div>
                 </div>
             </div>
         </div>
 
+        {% if session.plot_file %}
         <div class="row mt-3">
+            {% set activity_plots = session.plot_file[session.current_activity] %}
             <div class="card-columns">
-                <div id="space_div" class="card" style="visibility: hidden;">
+                {% if activity_plots.space %}
+                <div id="space_div" class="card">
                     <div class="card-body">
                         <h5 class="card-title">Space Perspective</h5>
-                        {% if session.space_file %}
-                        {% include session.space_file ignore missing %}
-                        {% endif %}
+                        <label class="toggle">
+                            <input type="checkbox">
+                            <span class="slider"></span>
+                            <span class="labels" data-on="3D" data-off="Heatmap"></span>
+                        </label>
+                        {% include activity_plots.space %}
                     </div>
                 </div>
-                <div id="time_div" class="card" style="visibility: hidden;">
+                {% endif %}
+                {% if activity_plots.time %}
+                <div id="time_div" class="card">
                     <div class="card-body">
                         <h5 class="card-title">Time Perspective</h5>
+                        {% include activity_plots.time %}
                     </div>
                 </div>
-                <div id="battery_div" class="card" style="visibility: hidden;">
+                {% endif %}
+
+                {% if activity_plots.battery %}
+                <div id="battery_div" class="card">
                     <div class="card-body">
                         <h5 class="card-title">Battery Perspective</h5>
                     </div>
                 </div>
+                {% endif %}
             </div>
         </div>
+        {% endif %}
     </div>
 </body>
 
