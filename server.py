@@ -39,11 +39,13 @@ def add_header(response):
 
 @server.route('/', methods=['GET', 'POST'])
 def init():
+    # if there is a delete file request
     if request.method == 'POST':
         session['plot_file'] = {}
         file_name = request.form['file_name']
         if file_name in data_dict.keys():
             data_dict.pop(file_name)
+            resp_list.remove(file_name)
             session['files'] = data_dict
 
     return render_template('index.html')
@@ -126,6 +128,7 @@ def discover_dfg():
         (nodes, edges) = create_dfg(file_path)
         session['response_data'] = {'nodes': nodes, 'edges': edges}
 
+        session['plot_file'] = {}
         return render_template('index.html')
 
 
@@ -182,7 +185,7 @@ def see_plot():
 
 
     # return Response(status=204)
-    return render_template('index.html')
+    return render_template('measurements_gui.html')
 
 
 
@@ -374,6 +377,10 @@ def discover_resource():
 
     return jsonify({'nodes': nodes, 'edges': edges, 'file_key': file_key})
 
+
+@server.route('/measurements_gui')
+def measurements_gui():
+    return render_template('measurements_gui.html')
 
 @server.route('/open-url', methods=['POST'])
 def open_url():

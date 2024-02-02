@@ -36,14 +36,12 @@ h1 {
 }
 
 .navbar-light {
-  background-color: #8A33FF;
+  background-color: #5001b8;
+  /*#5001b8;*/
+  font-family: Tahoma, sans-serif;
+  font-size: 30px;
 }
 
-
-.btn {
-  color: #8A33FF;
-  border-color: #8A33FF;
-}
 
 .frame-graph {
   width: 100%;
@@ -52,24 +50,13 @@ h1 {
   overflow: auto;
 }
 
-.btnn {
+.btn:hover {
   background-color: transparent;
-  border: none;
-  /* Remove borders */
-  color: #8A33FF;
-  /* White text */
-  padding: 12px 16px;
-  /* Some padding */
-  font-size: 16px;
-  /* Set a font size */
-  cursor: pointer;
-  /* Mouse pointer on hover */
+  border-color: #5001b8;
+  color: #5001b8;
 }
 
-/* Darker background on mouse-over */
-.btnn:hover {
-  color: rgb(47, 2, 83);
-}
+
 
 
 /* Switch button */
@@ -168,7 +155,7 @@ h1 {
 .node rect {
   stroke: #333;
   stroke-width: 2px;
-  fill: #fff;
+  fill: #e6e3e3e3;
 }
 
 .node text {
@@ -187,17 +174,18 @@ h1 {
 
 /* Hover effect for nodes */
 .node:hover rect {
-  fill: #8A33FF;
+  fill: #ffffff;
   stroke-width: 4px;
 }
 
 .node:hover text {
-  fill: #fff; /* Change text color on hover */
+  fill: black; /* Change text color on hover */
+  font-weight: bold;
 }
 
 /* Hover effect for edges */
 .edgePath:hover path {
-  stroke: #8A33FF;
+  stroke: #5001b8;
   stroke-width: 4px;
 }
 
@@ -209,7 +197,7 @@ svg {
 
 #graph-container {
   width: 100%;
-  height: 600px;
+  height: 800px;
 }
 
 .context-menu {
@@ -221,6 +209,7 @@ svg {
   padding: 5px;
   z-index: 1000;
 }
+
 
 .context-menu-option {
   cursor: pointer;
