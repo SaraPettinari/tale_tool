@@ -1,7 +1,21 @@
+import os
 import logging
 from server import server
+from flask import Flask, request, render_template
+
 
 logger = logging.getLogger(__name__)
+app = Flask(__name__)
+app.register_blueprint(server)
+
+app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 1  # disable caching
+app.secret_key = b'_5#y2L"F4Q8z\n\xec]/'
+app.config['SECRET_KEY'] = os.urandom(24)
+
+
+@app.route('/', methods=['GET'])
+def init():
+        return render_template('home.html')
 
 if __name__ == '__main__':
-    server.run(host='127.0.0.1', port=3000, debug=True)
+    app.run(host='127.0.0.1', port=3000, debug=True)

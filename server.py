@@ -8,7 +8,7 @@ import plotly.graph_objects as go
 import pandas as pd
 
 
-from flask import Flask, render_template, jsonify, request, Response, session
+from flask import Flask, render_template, jsonify, request, Response, session, Blueprint
 from collections import Counter
 from functools import reduce
 
@@ -17,11 +17,9 @@ from src.utils import log_to_dataframe, create_dfg
 from src.plot_creation import space_plot, time_plot
 
 
-server = Flask(__name__)
-server.config['SEND_FILE_MAX_AGE_DEFAULT'] = 1  # disable caching
-server.secret_key = b'_5#y2L"F4Q8z\n\xec]/'
-server.config['SECRET_KEY'] = os.urandom(24)
+#server = Flask(__name__)
 
+server = Blueprint('robotrace', __name__, url_prefix='/robotrace')
 
 files_dict = {}
 resp_list = []
@@ -37,7 +35,7 @@ def add_header(response):
     return response
 
 
-@server.route('/', methods=['GET', 'POST'])
+@server.route('/init', methods=['GET', 'POST'])
 def init():
     # if there is a delete file request
     if request.method == 'POST':

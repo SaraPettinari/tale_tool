@@ -95,7 +95,7 @@
         <div class="collapse" id="collapseInput">
             <div class="row justify-content-center">
                 <!-- File Upload Form -->
-                <form action="/select/logs" method="POST" enctype="multipart/form-data">
+                <form action="/robotrace/select/logs" method="POST" enctype="multipart/form-data">
                     <div class="container mt-4">
                         <label for="file" class="form-label">Select Event Log Files</label>
                         <div class="row">
@@ -170,7 +170,7 @@
                             <script>
                                 function openNewTab() {
                                     localStorage.setItem('sharedContent', document.getElementById('graph-container').innerHTML);
-                                    window.open("{{ url_for('measurements_gui') }}", "_blank");
+                                    window.open("{{ url_for('robotrace.measurements_gui') }}", "_blank");
                                 }
                             </script>
                         </td>
