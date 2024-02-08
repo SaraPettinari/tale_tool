@@ -17,5 +17,10 @@ app.config['SECRET_KEY'] = os.urandom(24)
 def init():
         return render_template('home.html')
 
+
+@app.errorhandler(404)
+def page_not_found(e):
+    return render_template('error_404.html')
+
 if __name__ == '__main__':
     app.run(host='127.0.0.1', port=3000, debug=True)

@@ -19,7 +19,10 @@ from src.plot_creation import space_plot, time_plot
 
 #server = Flask(__name__)
 
-server = Blueprint('robotrace', __name__, url_prefix='/robotrace')
+server = Blueprint('robotrace', __name__, 
+                   url_prefix='/robotrace', 
+                   template_folder='templates', 
+                   static_folder='static')
 
 files_dict = {}
 resp_list = []
@@ -28,6 +31,7 @@ resources_list = []
 data_dict = {}
 file_name = None
 
+gui_interface = 'robotrace.html'
 
 @server.after_request
 def add_header(response):
@@ -35,7 +39,7 @@ def add_header(response):
     return response
 
 
-@server.route('/init', methods=['GET', 'POST'])
+@server.route('/', methods=['GET', 'POST'])
 def init():
     # if there is a delete file request
     if request.method == 'POST':
@@ -45,16 +49,27 @@ def init():
             data_dict.pop(file_name)
             resp_list.remove(file_name)
             session['files'] = data_dict
+            if 'response_data' in session.keys():
+                session['response_data'] = ''
+                
+    return render_template(gui_interface)
 
-    return render_template('index.html')
 
-
-@server.route('/csv_processing')
+@server.route('/csv-processing', methods=['POST'])
 def csv_processing():
-    return render_template('csv_parser.html')
+    if 'csv-file' not in request.files:
+        return render_template(gui_interface)
+    
+    file = request.files['csv-file']
+    if file.filename == '':
+        return jsonify({})
+    if file:
+        dest_name = csv_to_xes(file)
+        response = {'saved_as': dest_name}
+        return jsonify(response)
 
 
-@server.route('/select/logs', methods=['POST'])
+@server.route('/select-logs', methods=['POST'])
 def choose_path():
     files_list = request.files.getlist('file')
     for f in files_list:
@@ -67,7 +82,7 @@ def choose_path():
     session['files'] = resp_list
     session['fdata'] = data_dict[f.filename]
 
-    return render_template('index.html')
+    return render_template(gui_interface)
 
 
 @server.route('/filter', methods=['POST'])
@@ -93,10 +108,10 @@ def get_resources():
     session['fdata'] = data_dict[file_name]
     session['file_name'] = file_name
 
-    return render_template('index.html')
+    return render_template(gui_interface)
 
 
-@server.route('/discover/activity', methods=['GET', 'POST'])
+@server.route('/discover-activity', methods=['GET', 'POST'])
 def discover_dfg():
     global file_name
     if request.method == 'GET':
@@ -117,7 +132,7 @@ def discover_dfg():
         session['case_opt'] = int(case_opt)
         session['response_data'] = {'nodes': nodes, 'edges': edges}
 
-        return render_template('index.html')
+        return render_template(gui_interface)
 
     elif request.method == 'POST':
         file_name = request.form['file_name']
@@ -127,7 +142,7 @@ def discover_dfg():
         session['response_data'] = {'nodes': nodes, 'edges': edges}
 
         session['plot_file'] = {}
-        return render_template('index.html')
+        return render_template(gui_interface)
 
 
 @server.route('/csv/parse', methods=['POST'])

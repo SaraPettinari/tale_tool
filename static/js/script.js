@@ -35,6 +35,18 @@ function generate_dagre(data) {
 
     g.nodes().forEach(function (v) {
         var node = g.node(v);
+        if (node.label === 'start') {
+            node.shape = 'circle';
+            node.r = 15; // Radius of the circle
+            node.style = 'fill: lightgreen';
+        } else if (node.label === 'end') {
+            node.shape = 'circle';
+            node.r = 15;
+            node.style = 'fill: #E55451';
+        }
+        else {
+            node.shape = 'rect';
+        }
         // Round the corners of the nodes
         node.rx = node.ry = 5;
     });
@@ -162,7 +174,7 @@ function addOnFunctionalities(svgGroup, g) {
     svgGroup.selectAll('g.node')
         .on('contextmenu', function (event, nodeId) {
             document.getElementById("activity_id").setAttribute("value", nodeId)
-    
+
             event.preventDefault(); // Prevent the default context menu
             event.stopPropagation(); // Stop propagation to prevent triggering other click events
 

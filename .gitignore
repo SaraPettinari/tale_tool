@@ -1,3 +1,3 @@
-/templates/*_plot.html
+/templates/*/*
 *pycache*
 /docs/logs/*
