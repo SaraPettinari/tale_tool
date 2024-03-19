@@ -22,5 +22,5 @@ pip install -r requirements.txt
 
 ## Run
 ```bash
-python ./src/backend/main.py  
+python main.py  
 ```

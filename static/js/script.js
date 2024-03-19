@@ -30,7 +30,7 @@ function generate_dagre(data) {
             node.label = node.label.replaceAll("_", "\n")
         }
 
-        g.setNode(node.id, { label: node.label })
+        g.setNode(node.id, { label: node.label, labelStyle: "font-size: 22px" })
     }
 
     g.nodes().forEach(function (v) {
@@ -46,6 +46,7 @@ function generate_dagre(data) {
         }
         else {
             node.shape = 'rect';
+            node.style = 'fill: #e6e3e3e3;'
         }
         // Round the corners of the nodes
         node.rx = node.ry = 5;
@@ -73,10 +74,13 @@ function generate_dagre(data) {
         g.setEdge(edge.from, edge.to, {
             label: edge_label,
             name: edge.from + '-' + edge_label + '-' + edge.to,
-            curve: d3.curveBasis
+            curve: d3.curveBasis,
+            labelpos: 'c', // label position to center
+            labeloffset: -10, // y offset to decrease edge-label separation
         })
     }
 
+    
 
     elements = nodes.concat(edges)
     console.log(nodes)
@@ -160,10 +164,11 @@ function addOnFunctionalities(svgGroup, g) {
 
             // Highlight outgoing edges from the double-clicked node
             g.outEdges(nodeId).forEach(edge => {
-                svgGroup.selectAll(`g.edgePath path[id="${g.edge(edge).name}"]`).style('stroke', '#8a67c2');
+                svgGroup.selectAll(`g.edgePath path[id="${g.edge(edge).name}"]`).style('stroke', '#E55451');
             });
+            // Highlight incoming edges from the double-clicked node
             g.inEdges(nodeId).forEach(edge => {
-                svgGroup.selectAll(`g.edgePath path[id="${g.edge(edge).name}"]`).style('stroke', '#e4a531');
+                svgGroup.selectAll(`g.edgePath path[id="${g.edge(edge).name}"]`).style('stroke', 'lightgreen');
             });
         });
 

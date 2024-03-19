@@ -33,6 +33,7 @@ file_name = None
 
 gui_interface = 'robotrace.html'
 
+
 @server.after_request
 def add_header(response):
     response.headers['Cache-Control'] = 'no-store'
@@ -51,7 +52,10 @@ def init():
             session['files'] = data_dict
             if 'response_data' in session.keys():
                 session['response_data'] = ''
-                
+    session['communication'] = 'home/comm_plot.html'
+    session['space'] = 'home/space_plot.html'
+    
+            
     return render_template(gui_interface)
 
 
@@ -62,11 +66,13 @@ def csv_processing():
     
     file = request.files['csv-file']
     if file.filename == '':
-        return jsonify({})
+        return render_template(gui_interface)
     if file:
-        dest_name = csv_to_xes(file)
-        response = {'saved_as': dest_name}
-        return jsonify(response)
+        if file.filename.endswith('csv'):
+            filepath = os.path.join(server.root_path, 'docs', 'logs', 'csv', file.filename)
+            file.save(filepath)
+            dest_name = csv_to_xes(filepath)
+        return render_template(gui_interface, message = "Saved as: {dest_name}", dest_name = dest_name)
 
 
 @server.route('/select-logs', methods=['POST'])
@@ -119,17 +125,20 @@ def discover_dfg():
         case_opt = request.args.get('case_option')
         file_name = request.args.get('file_name')
         file_path = os.path.join(server.root_path, 'docs', 'logs', file_name)
+        session['curr_path'] = file_path
 
         if(res_opt == 'none' and case_opt == 'none'):
             filtering_conditions = {}
         else:
             filtering_conditions = {'org:resource': res_opt}
+            session['resource_opt'] = res_opt
+            if(case_opt != 'none'):
+                session['case_opt'] = int(case_opt)
 
         (nodes, edges) = create_dfg(file_path,
                                     filtering_conditions)
 
-        session['resource_opt'] = res_opt
-        session['case_opt'] = int(case_opt)
+
         session['response_data'] = {'nodes': nodes, 'edges': edges}
 
         return render_template(gui_interface)
@@ -137,6 +146,7 @@ def discover_dfg():
     elif request.method == 'POST':
         file_name = request.form['file_name']
         file_path = os.path.join(server.root_path, 'docs', 'logs', file_name)
+        session['curr_path'] = file_path
 
         (nodes, edges) = create_dfg(file_path)
         session['response_data'] = {'nodes': nodes, 'edges': edges}
@@ -157,6 +167,7 @@ def parse_csv():
         return jsonify(response)
     else:
         return jsonify({})
+    
 
 
 @server.route('/discover/all', methods=['POST'])
@@ -393,6 +404,9 @@ def discover_resource():
 
 @server.route('/measurements_gui')
 def measurements_gui():
+    file_path = session['curr_path']
+    fig_path = space_plot('', file_path)
+    session['space'] = fig_path
     return render_template('measurements_gui.html')
 
 @server.route('/open-url', methods=['POST'])

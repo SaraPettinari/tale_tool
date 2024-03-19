@@ -27,6 +27,7 @@ def log_to_dataframe(log_path):
     tree = ET.parse(log_path)
     root = tree.getroot()
     case = 0
+    lc = []
     for trace in root.iter('trace'):
         case += 1
         for child in trace.iter('event'):
@@ -46,9 +47,11 @@ def log_to_dataframe(log_path):
                     resource.append(el.attrib['value'])
                 elif el.attrib['key'] == 'activity':
                     location_activity.append(el.attrib['value'])
+                elif el.attrib['key'] == 'lifecycle:transition':
+                    lc.append(el.attrib['value'])
 
     df = DataFrame({
-        'x': x, 'y': y, 'z': z, 'activity': lables, 'case': cases, 'timestamp': times})
+        'x': x, 'y': y, 'z': z, 'activity': lables, 'case': cases, 'timestamp': times, 'lifecycle': lc})
 
     if len(resource) > 0:
         df['resource'] = resource
@@ -222,6 +225,8 @@ def create_dfg(file_path, filtering_conditions={}):
     else:
         dfg, start_activities, end_activities = pm4py.discover_directly_follows_graph(
             log)
+        
+    
     activity_key = exec_utils.get_param_value(
         Parameters.ACTIVITY_KEY, {}, xes.DEFAULT_NAME_KEY)
     activity_count = attr_get.get_attribute_values(
@@ -231,39 +236,45 @@ def create_dfg(file_path, filtering_conditions={}):
     edges = []
     id0 = 0
     id1 = 0
-    nodes.append({'id': 'start_node', 'label': 'start', 'shape': 'triangleDown',
+    nodes.append({'id': 'start_node', 'label': 'start', 'shape': 'diamond',
                  'size': 10, 'color': {'background': '#ADFF2F', 'border': "#ADFF2F"}})
-    nodes.append({'id': 'end_node', 'label': 'end', 'shape': 'hexagon',
+    nodes.append({'id': 'end_node', 'label': 'end', 'shape': 'diamond',
                  'size': 10, 'color': {'background': '#ff6666', 'border': "#ff6666"}})
     for key in dfg:
         color = "#99ccff"
-        if (key[0] in start_activities):
+        node_1 = key[0]
+        node_2 = key[1]
+        if (node_1 in start_activities):
             # color = "#ADFF2F"
+            count = start_activities[node_1]
             edges.append(
-                {'from': 'start_node', 'to': key[0], 'label': 0, 'dashes': True})
-        if (key[0] in end_activities):
+                {'from': 'start_node', 'to': node_1, 'label': count, 'dashes': True})
+        if (node_1 in end_activities):
             # color = "#ff6666"
+            count = end_activities[node_1]
             edges.append(
-                {'from': key[0], 'to': 'end_node', 'label': 0, 'dashes': True})
-        if (not (key[0] in n_check)):
-            n_check.add(key[0])
-            nodes.append({'id': key[0], 'label': key[0], 'color': {
-                'background': color}, 'count': activity_count[key[0]]})
+                {'from': node_1, 'to': 'end_node', 'label': count, 'dashes': True})
+        if (not (node_1 in n_check)):
+            n_check.add(node_1)
+            nodes.append({'id': node_1, 'label': node_1, 'color': {
+                'background': color}, 'count': activity_count[node_1]})
         # color = "#99ccff"
-        if (key[1] in start_activities):
+        if (node_2 in start_activities):
             # color = "#ADFF2F"
+            count = start_activities[node_2]
             edges.append(
-                {'from': 'start_node', 'to': key[1], 'label': 0, 'dashes': True})
-        if (key[1] in end_activities):
+                {'from': 'start_node', 'to': node_2, 'label': count, 'dashes': True})
+        if (node_2 in end_activities):
             # color = "#ff6666"
+            count = end_activities[node_2]
             edges.append(
-                {'from': key[1], 'to': 'end_node', 'label': 0, 'dashes': True})
-        if (not (key[1] in n_check)):
-            n_check.add(key[1])
-            nodes.append({'id': key[1], 'label': key[1], 'color': {
-                'background': color}, 'count': activity_count[key[1]]})
+                {'from': node_2, 'to': 'end_node', 'label': count, 'dashes': True})
+        if (not (node_2 in n_check)):
+            n_check.add(node_2)
+            nodes.append({'id': node_2, 'label': node_2, 'color': {
+                'background': color}, 'count': activity_count[node_2]})
 
-        edges.append({'from': key[0], 'to': key[1], 'label': str(dfg[key])})
+        edges.append({'from': node_1, 'to': node_2, 'label': str(dfg[key])})
 
         id0 = id0 + 1
         id1 = id1 + 1

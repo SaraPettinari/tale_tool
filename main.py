@@ -15,7 +15,7 @@ app.config['SECRET_KEY'] = os.urandom(24)
 
 @app.route('/', methods=['GET'])
 def init():
-        return render_template('home.html')
+    return render_template('home.html')
 
 
 @app.errorhandler(404)

@@ -4,7 +4,7 @@
 <head>
     <!-- Metadata Section -->
     {% block head %}
-    <title>RoboTrace</title>
+    <title>TaleMiner</title>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
     <!-- External CSS Libraries -->
@@ -28,7 +28,8 @@
 <body>
     <!-- Navigation Section -->
     <nav class="navbar navbar-expand-lg navbar-dark navbar-light justify-content-center shadow-sm">
-        <h1 class="navbar-brand">RoboTrace</h1>
+         <!-- <h1 class="navbar-brand">RoboTrace</h1>-->
+        <h1 class="navbar-brand">DFG-discovery</h1>
         <!-- Toggle Button for File Upload Section -->
         <button class="btn btn-outline-secondary btn-nav" type="button" data-bs-toggle="collapse"
             data-bs-target="#collapseInput" aria-expanded="false" aria-controls="collapseInput">
@@ -52,7 +53,7 @@
                     <h4> Filtering</h4>
                 </div>
                 <div class="card-body">
-                    <form id="filters" action="/discover-activity" method="GET">
+                    <form id="filters" action="{{url_for('robotrace.discover_dfg')}}" method="GET">
                         <!-- Resource Filtering -->
                         {% if session.fdata.resources %}
                         <h5> Resources </h5>
@@ -118,7 +119,7 @@
                                 <button class="btn btn-outline-secondary w-100" id="uploadBtn">CSV Parser</button>
 
                                 <div id="uploadDialog" style="display: none;">
-                                    <form action="csv-processing" method="POST" enctype="multipart/form-data">
+                                    <form action="{{ url_for('robotrace.csv_processing') }}" method="POST" enctype="multipart/form-data">
                                         <div class="row">
                                             <div class="col-md-5 mb-3">
                                                 <input class="form-control" type="file" name="csv-file" id="csv-file">
@@ -173,8 +174,14 @@
                                 <input hidden name="file_name" value="{{value}}" />
                                 <button class="btn btn-outline-dark" type="submit">Discover Process</button>
                             </form>
-                            <button class="btn btn-outline-dark" title="Please Discover Process" type="button" onclick="openNewTab()" id="measures" disabled >Measurements
-                                GUI</button>
+                            <button class="btn btn-outline-dark" title="Please Discover Process" type="button"
+                                onclick="openNewTab()" id="measures" disabled>Measurements GUI</button>
+                            <script>
+                                function openNewTab() {
+                                    localStorage.setItem('sharedContent', document.getElementById('graph-container').innerHTML);
+                                    window.open("{{ url_for('robotrace.measurements_gui') }}", "_blank");
+                                }
+                            </script>
                         </td>
                         <td>
                             <form action="{{ url_for('robotrace.init') }}" method="POST">
@@ -220,12 +227,12 @@
                 const response_data = {{ session.response_data|default ("") | tojson }}
                 generate_dagre(response_data)
                 console.log('rd', response_data)
-                if (response_data == ''){
-                document.getElementById('measures').disabled = true;
-            } else {
-                document.getElementById('measures').disabled = false;
-                document.getElementById('measures').title = "Open Multi-Perspective Interface"
-            }
+                if (response_data == '') {
+                    document.getElementById('measures').disabled = true;
+                } else {
+                    document.getElementById('measures').disabled = false;
+                    document.getElementById('measures').title = "Open Multi-Perspective Interface"
+                }
             </script>
         </div>
     </div>
