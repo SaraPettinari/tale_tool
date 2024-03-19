@@ -14,7 +14,7 @@ from functools import reduce
 
 from src.xes_handler import merge_xes, csv_to_xes
 from src.utils import log_to_dataframe, create_dfg
-from src.plot_creation import space_plot, time_plot
+from src.plot_creation import space_plot
 
 
 #server = Flask(__name__)
@@ -197,17 +197,7 @@ def see_plot():
             session['plot_file'][activity_name] = {'space': fig_path}
         else:
             session['plot_file'][activity_name]['space'] = fig_path
-    # time plot generation
-    elif args.get('time'):          
-        fig_path = time_plot(activity_name, file_path)
-        if not 'plot_file' in session.keys():
-            session['plot_file'] = {activity_name: {'time': fig_path}}
-        elif not activity_name in session['plot_file'].keys():
-            session['plot_file'][activity_name] = {'time': fig_path}
-        else:
-            session['plot_file'][activity_name]['time'] = fig_path
-
-
+    
     # return Response(status=204)
     return render_template('measurements_gui.html')
 

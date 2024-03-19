@@ -1,0 +1,6 @@
+Flask==2.2.2
+pandas==1.4.1
+plotly==5.6.0
+pm4py==2.2.29
+pywebview==3.6.3
+webview==0.1.5

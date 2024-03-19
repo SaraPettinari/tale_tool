@@ -65,73 +65,7 @@ def log_to_dataframe(log_path):
 
     return df
 
-
-def generate_heatmap_data(log_path):
-    heatmap_data = {}
-    
-    tree = ET.parse(log_path)
-    root = tree.getroot()
-    act_points = {}
-    min_x = sys.float_info.max
-    max_x = -sys.float_info.max
-    min_y = sys.float_info.max
-    max_y = -sys.float_info.max
-    min_z = sys.float_info.max
-    max_z = -sys.float_info.max
-
-    for trace in root.iter('trace'):
-        for child in trace.iter('event'):
-            x = 0
-            y = 0
-            z = 0
-            name = ""
-            for el in child:
-                if el.attrib['key'] == 'x':
-                    x = float(el.attrib['value'])
-                elif el.attrib['key'] == 'y':
-                    y = float(el.attrib['value'])
-                elif el.attrib['key'] == 'z':
-                    z = float(el.attrib['value'])
-                elif el.attrib['key'] == 'concept:name':
-                    name = el.attrib['value']
-            if (x > max_x):
-                max_x = x
-            elif (x < min_x):
-                min_x = x
-            if (y > max_y):
-                max_y = y
-            elif (y < min_y):
-                min_y = y
-            if (z > max_z):
-                max_z = z
-            elif (z < min_z):
-                min_z = z
-            if(not (name in act_points)):
-                act_points[name] = []
-            act_points[name].append([x, y, z])
-    x_scale = (max_x-min_x)/10
-    y_scale = (max_y-min_y)/10
-    x_legend = [(2*min_x+x_scale)/2, (2*min_x+3*x_scale)/2, (2*min_x+5*x_scale)/2, (2*min_x+7*x_scale)/2, (2*min_x+9*x_scale)/2,
-                (2*min_x+11*x_scale)/2, (2*min_x+13*x_scale)/2, (2*min_x+15*x_scale)/2, (2*min_x+17*x_scale)/2, (2*min_x+19*x_scale)/2]
-    y_legend = [(2*min_y+y_scale)/2, (2*min_y+3*y_scale)/2, (2*min_y+5*y_scale)/2, (2*min_y+7*y_scale)/2, (2*min_y+9*y_scale)/2,
-                (2*min_y+11*y_scale)/2, (2*min_y+13*y_scale)/2, (2*min_y+15*y_scale)/2, (2*min_y+17*y_scale)/2, (2*min_y+19*y_scale)/2]
-
-    for name in act_points:
-        heatmap_data[name] = {}
-        data = [[0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [
-            0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]]
-        for point in act_points[name]:
-            id_x = int((float(point[0])-min_x)//x_scale)
-            id_y = int((float(point[1])-min_y)//y_scale)
-            if(id_x == 10):
-                id_x = 9
-            if(id_y == 10):
-                id_y = 9
-            data[id_x][id_y] = data[id_x][id_y] + 1
-        heatmap_data[name] = {'x': x_legend, 'y': y_legend, 'z': data}
-
-
-def test(activities_count):
+def generate_color(activities_count):
     activities_color = {}
 
     min_value, max_value = get_min_max_value(activities_count)
@@ -151,62 +85,6 @@ def test(activities_count):
         activities_color[ac] = v1
 
     return activities_color
-
-
-def create_dfg_v2(file_path, resource=''):
-    log = xes_importer.apply(file_path)
-    log_neg = pm4py.filter_event_attribute_values(
-        log, "lifecycle:transition", ["inprogress"], level="event", retain=False)
-
-    log = interval_lifecycle.to_interval(log_neg)
-
-    if resource != '':
-        tracefilter = pm4py.filter_event_attribute_values(
-            log, "org:resource", resource, level="event", retain=True)
-        dfg, start_activities, end_activities = pm4py.discover_directly_follows_graph(
-            tracefilter)
-    else:
-        dfg, start_activities, end_activities = pm4py.discover_directly_follows_graph(
-            log)
-    activity_key = exec_utils.get_param_value(
-        Parameters.ACTIVITY_KEY, {}, xes.DEFAULT_NAME_KEY)
-    activity_count = attr_get.get_attribute_values(
-        log, activity_key, parameters={})
-    nodes = []
-    n_check = set()
-    edges = []
-    id0 = 0
-    id1 = 0
-    nodes.append('start_node')
-    nodes.append('end_node')
-    for key in dfg:
-        color = "#99ccff"
-        if (key[0] in start_activities):
-            # color = "#ADFF2F"
-            edges.append(('start_node', key[0]))
-        if (key[0] in end_activities):
-            # color = "#ff6666"
-            edges.append((key[0], 'end_node'))
-        if (not (key[0] in n_check)):
-            n_check.add(key[0])
-            nodes.append(key[0])
-        # color = "#99ccff"
-        if (key[1] in start_activities):
-            # color = "#ADFF2F"
-            edges.append(('start_node', key[1]))
-        if (key[1] in end_activities):
-            # color = "#ff6666"
-            edges.append((key[1], 'end_node'))
-        if (not (key[1] in n_check)):
-            n_check.add(key[1])
-            nodes.append(key[1])
-
-        edges.append((key[0], key[1]))
-
-        id0 = id0 + 1
-        id1 = id1 + 1
-
-    return (nodes, edges)
 
 
 def create_dfg(file_path, filtering_conditions={}):
@@ -307,7 +185,7 @@ def create_dist_dfg(file_path, location_graph=False):
     nodes = []
     n_check = set()
     edges = []
-    colors = test(activity_count)  # for location graph
+    colors = generate_color(activity_count)  # for location graph
     for key in dict_kres:
         # if we it is an activity graph
         if not location_graph:
@@ -368,7 +246,7 @@ def create_performance(file_path, location_graph=False):
     edges = []
     id0 = 0
     id1 = 0
-    colors = test(activity_count)
+    colors = generate_color(activity_count)
     for key in dfg:
         if not location_graph:
             color = "#000000"
