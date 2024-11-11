@@ -3,6 +3,7 @@ import os
 import xml.etree.ElementTree as ET
 import pandas as pd
 from pandas import DataFrame
+from datetime import timedelta
 
 #PM4PY imports
 import pm4py
@@ -102,10 +103,10 @@ def create_dfg(file_path, filtering_conditions={}):
         for condition in filtering_conditions.keys():
             parameters_filter = {attributes_filter.Parameters.ATTRIBUTE_KEY: condition}
             tracefilter = attributes_filter.apply(log, [filtering_conditions[condition]], parameters=parameters_filter)
-        dfg, start_activities, end_activities = pm4py.discover_directly_follows_graph(
+        dfg, start_activities, end_activities = pm4py.discovery.discover_dfg(
             tracefilter)
     else:
-        dfg, start_activities, end_activities = pm4py.discover_directly_follows_graph(
+        dfg, start_activities, end_activities = pm4py.discovery.discover_dfg(
             log)
         
   
@@ -236,15 +237,17 @@ def get_resources(file_path):
     return resources
 
 
-def create_performance_dfg(file_path, location_graph=False):
+def create_performance_dfg(file_path):
     log = xes_importer.apply(file_path)
+    activity_duration = get_activity_duration(log)
     # generate_heatmap_data(file_path)
     log = interval_lifecycle.to_interval(log)
-    dfg, start_activities, end_activities = pm4py.discover_performance_dfg(log)
+    dfg, start_activities, end_activities = pm4py.discovery.discover_performance_dfg(log)
     activity_key = exec_utils.get_param_value(
         Parameters.ACTIVITY_KEY, {}, xes.DEFAULT_NAME_KEY)
     activity_count = attr_get.get_attribute_values(
         log, activity_key, parameters={})
+    
     nodes = []
     n_check = set()
     edges = []
@@ -252,34 +255,28 @@ def create_performance_dfg(file_path, location_graph=False):
     id1 = 0
     colors = generate_color(activity_count)
     for key in dfg:
-        if not location_graph:
-            color = "#000000"
-            if (key[0] in start_activities):
-                color = "#ADFF2F"
-            if (key[0] in end_activities):
-                color = "#FF0000"
-            if (not (key[0] in n_check)):
-                n_check.add(key[0])
-                nodes.append({'id': key[0], 'label': key[0], 'color': {
-                    'background': color}, 'count': activity_count[key[0]]})
-            color = "#cc99ff"
-            if (key[1] in start_activities):
-                color = "#ADFF2F"
-            if (key[1] in end_activities):
-                color = "#FF0000"
-            if (not (key[1] in n_check)):
-                n_check.add(key[1])
-                nodes.append({'id': key[1], 'label': key[1], 'color': {
-                    'background': color}, 'count': activity_count[key[1]]})
-        else:
-            if (not (key[0] in n_check)):
-                n_check.add(key[0])
-                nodes.append({'id': key[0], 'label': key[0], 'color': {
-                    'background': colors[key[0]]}, 'count': activity_count[key[0]]})
-            if (not (key[1] in n_check)):
-                n_check.add(key[1])
-                nodes.append({'id': key[1], 'label': key[1], 'color': {
-                    'background': colors[key[1]]}, 'count': activity_count[key[1]]})
+        if (key[0] in start_activities):
+            # color = "#ADFF2F"
+            count = start_activities[key[0]]
+            edges.append(
+                {'from': 'start_node', 'to': key[0], 'label': count, 'dashes': True})
+        color = "#000000"
+        if (not (key[0] in n_check)):
+            n_check.add(key[0])
+            color = colors[key[0]]
+            nodes.append({'id': key[0], 'label': key[0], 'color': {
+                'background': color}, 'count': activity_count[key[0]]})
+        color = "#cc99ff"
+        if (key[1] in end_activities):
+            # color = "#ff6666"
+            count = end_activities[key[1]]
+            edges.append(
+                {'from': key[1], 'to': 'end_node', 'label': count, 'dashes': True})
+        if (not (key[1] in n_check)):
+            n_check.add(key[1])
+            color = colors[key[1]]
+            nodes.append({'id': key[1], 'label': key[1], 'color': {
+                'background': color}, 'count': activity_count[key[1]]})
 
         mean_sec = round(dfg[key]['mean'], 2)
 
@@ -305,3 +302,35 @@ def get_file_path(file_name):
         return file_path
     except:
         print("File path error")
+        
+        
+        
+def get_activity_duration(log):
+    activity_durations = []
+
+    for trace in log:
+    # Dictionary to store start times for each activity
+        start_times = {}
+        
+        # Iterate over each event in the trace
+        for event in trace:
+            activity = event['concept:name']
+            lifecycle = event['lifecycle:transition']
+            timestamp = event['time:timestamp']
+            
+            # Check if it's a start or complete event
+            if lifecycle == 'start':
+                start_times[activity] = timestamp
+            elif lifecycle == 'complete' and activity in start_times:
+                # Calculate duration
+                duration = timestamp - start_times[activity]
+                activity_durations.append({
+                    'trace_id': trace.attributes['concept:name'],
+                    'activity': activity,
+                    'duration': duration.total_seconds()  # Convert to seconds
+                })
+                # Remove the start time after calculating duration
+                del start_times[activity]
+
+    durations_df = DataFrame(activity_durations)
+    return durations_df

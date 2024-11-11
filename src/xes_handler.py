@@ -5,22 +5,40 @@ import pm4py
 from pm4py.objects.conversion.log import converter as log_converter
 from pm4py.objects.log.exporter.xes import exporter as xes_exporter
 from pm4py.objects.log.importer.xes import importer as xes_importer
+from pm4py.util import xes_constants
 
 
 def csv_to_xes(path):
     name = path.split('\\')[-1].split('.')[0]
     data = pd.read_csv(path)
-    if len(data.columns) == 8:
-        cols = ['time:timestamp', 'concept:name', 'lifecycle:transition',
-                'data:payload', 'x', 'y', 'z', 'case:concept:name']
-    elif len(data.columns) == 9:
-        cols = ['time:timestamp', 'concept:name', 'lifecycle:transition',
-                'data:payload', 'x', 'y', 'z', 'case:concept:name', 'org:resource']
-    else:
-        cols = data.columns.values.tolist()
-    data.columns = cols
+
+    cols = data.columns.values.tolist()
+
+    remaps= {}
+
+    for col in cols:
+        if 'time' in col.lower():
+            remaps[col] = xes_constants.DEFAULT_TIMESTAMP_KEY
+        elif 'activity' in col.lower():
+            remaps[col] = xes_constants.DEFAULT_NAME_KEY
+        elif ('resource' or 'robot' or 'actor') in col.lower():
+            remaps[col] = xes_constants.DEFAULT_RESOURCE_KEY
+        elif 'lifecycle' in col.lower():
+            remaps[col] = xes_constants.DEFAULT_TRANSITION_KEY
+    data.rename(columns=remaps, inplace=True)
+    
+    log = pm4py.utils.format_dataframe(data, case_id='execution_id')
+
     data['time:timestamp'] = pd.to_datetime(data['time:timestamp'])
     data['concept:name'] = data['concept:name'].astype(str)
+
+    data['state'] = data['state'].astype(str)
+    data['msg_id'] = data['msg_id'].astype(str)
+    data['msg_payload'] = data['msg_payload'].astype(str)
+    data['msg_role'] = data['msg_role'].astype(str)
+    data[xes_constants.DEFAULT_TRANSITION_KEY] = data[xes_constants.DEFAULT_TRANSITION_KEY].astype(str)
+    
+
 
     log = log_converter.apply(
         data, variant=log_converter.Variants.TO_EVENT_LOG)
