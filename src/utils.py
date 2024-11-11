@@ -5,12 +5,12 @@ from pandas import DataFrame
 
 #PM4PY imports
 import pm4py
+from pm4py.algo.filtering.log.attributes import attributes_filter
 from pm4py.objects.log.importer.xes import importer as xes_importer
 from pm4py.statistics.attributes.log import get as attr_get
 from pm4py.util import exec_utils
 from pm4py.util import xes_constants as xes
-from pm4py.visualization.dfg.parameters import Parameters
-from pm4py.visualization.dfg.variants.frequency import get_activities_color, get_min_max_value
+from pm4py.visualization.dfg.variants.timeline import Parameters, get_min_max_value
 from pm4py.objects.log.util import interval_lifecycle
 from pm4py.algo.transformation.log_to_features import algorithm as log_to_features
 ###
@@ -89,15 +89,15 @@ def generate_color(activities_count):
 
 def create_dfg(file_path, filtering_conditions={}):
     log = xes_importer.apply(file_path)
-    log_neg = pm4py.filter_event_attribute_values(
-        log, "lifecycle:transition", ["inprogress"], level="event", retain=False)
-
+    parameters_filter = {attributes_filter.Parameters.ATTRIBUTE_KEY: "lifecycle:transition"}
+    log_neg = attributes_filter.apply(log, ['start', 'complete'], parameters=parameters_filter)
+    
     log = interval_lifecycle.to_interval(log_neg)
 
     if len(filtering_conditions) > 0:
         for condition in filtering_conditions.keys():
-            tracefilter = pm4py.filter_event_attribute_values(
-                log, condition, filtering_conditions[condition], level="event", retain=True)
+            parameters_filter = {attributes_filter.Parameters.ATTRIBUTE_KEY: condition}
+            tracefilter = attributes_filter.apply(log, [filtering_conditions[condition]], parameters=parameters_filter)
         dfg, start_activities, end_activities = pm4py.discover_directly_follows_graph(
             tracefilter)
     else:

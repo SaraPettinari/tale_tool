@@ -55,3 +55,7 @@ def space_plot(activity_name, file_path):
     template_path = activity_name + '/' + out_file
     print(template_path)
     return template_path
+
+
+def comm_plot(file_path):
+    df = log_to_dataframe(file_path)

@@ -19,9 +19,6 @@ git clone <repository_link>
 pip install -r requirements.txt
 ```
 
-### PM4Py installation
-[Please follow these instructions](https://pm4py.fit.fraunhofer.de/install)
-
 ## Run
 ```bash
 python main.py  
