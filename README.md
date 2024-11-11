@@ -15,6 +15,26 @@ git clone <repository_link>
 
 ### Python dependecies installation
 
+**Create a virtual environment**
+```bash
+python -m venv venv
+```
+
+**Activate the virtual environment**
+
+_Windows_
+```bash
+myenv\Scripts\activate
+```
+
+_macOS and Linux_
+
+```bash
+source myenv/bin/activate
+```
+
+**Install dependencies**
+
 ```bash
 pip install -r requirements.txt
 ```

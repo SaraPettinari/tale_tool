@@ -15,7 +15,7 @@ function generate_dagre(data) {
     console.log(g)
 
     // Set an object for the graph label
-    g.setGraph({ rankdir: 'TB', nodesep: 25 });
+    g.setGraph({ rankdir: 'LR', nodesep: 25 });
 
     // Default to assigning a new object as a label for each new edge.
     g.setDefaultEdgeLabel(function () { return {}; });

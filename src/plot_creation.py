@@ -5,9 +5,19 @@ import pandas as pd
 
 from src.utils import log_to_dataframe
 from functools import reduce
+import src.const as cn
 
+def get_plot(measure, file_path):
+    if measure == cn.SPACE:
+        return get_space_plot('', file_path)
+    elif measure == cn.TIME:
+        return ''
+    elif measure == cn.COMM:
+        return ''
+    elif measure == cn.BATTERY:
+        return ''
 
-def space_plot(activity_name, file_path):
+def get_space_plot(activity_name, file_path):
     df = log_to_dataframe(file_path)
     if activity_name != '':
         filtered_df = df[df['activity'] == activity_name]

@@ -1,4 +1,5 @@
 import sys
+import os
 import xml.etree.ElementTree as ET
 import pandas as pd
 from pandas import DataFrame
@@ -14,6 +15,9 @@ from pm4py.visualization.dfg.variants.timeline import Parameters, get_min_max_va
 from pm4py.objects.log.util import interval_lifecycle
 from pm4py.algo.transformation.log_to_features import algorithm as log_to_features
 ###
+
+ROOT_DIR = os.path.abspath(os.curdir)
+
 
 def log_to_dataframe(log_path):
     x = []
@@ -104,7 +108,7 @@ def create_dfg(file_path, filtering_conditions={}):
         dfg, start_activities, end_activities = pm4py.discover_directly_follows_graph(
             log)
         
-    
+  
     activity_key = exec_utils.get_param_value(
         Parameters.ACTIVITY_KEY, {}, xes.DEFAULT_NAME_KEY)
     activity_count = attr_get.get_attribute_values(
@@ -232,7 +236,7 @@ def get_resources(file_path):
     return resources
 
 
-def create_performance(file_path, location_graph=False):
+def create_performance_dfg(file_path, location_graph=False):
     log = xes_importer.apply(file_path)
     # generate_heatmap_data(file_path)
     log = interval_lifecycle.to_interval(log)
@@ -293,3 +297,11 @@ def create_performance(file_path, location_graph=False):
         id1 = id1 + 1
 
     return (nodes, edges)
+
+
+def get_file_path(file_name):
+    try:
+        file_path = os.path.join(ROOT_DIR, 'docs', 'logs', file_name)
+        return file_path
+    except:
+        print("File path error")
