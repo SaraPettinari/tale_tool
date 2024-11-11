@@ -1,12 +1,15 @@
 import os
 import logging
-from server import server
+from routes.discovery import discovery
+from routes.enhancement import enhancement
 from flask import Flask, request, render_template
 
 
 logger = logging.getLogger(__name__)
 app = Flask(__name__)
-app.register_blueprint(server)
+
+app.register_blueprint(discovery)
+app.register_blueprint(enhancement)
 
 app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 1  # disable caching
 app.secret_key = b'_5#y2L"F4Q8z\n\xec]/'

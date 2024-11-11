@@ -14,13 +14,37 @@
             justify-content: center;
             align-items: center;
             height: 100vh;
+            background: url('https://source.unsplash.com/1600x900/?technology') no-repeat center center/cover;
+            color: white;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7);
+        }
+
+        .container {
+            background: linear-gradient(90deg, #5001b8, #a100f2);
+            padding: 50px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+        }
+
+        h1 {
+            font-size: 3rem;
+            margin-bottom: 30px;
         }
 
         .btn-start {
             font-size: 24px;
             padding: 12px 24px;
-            background-color: #5001b8;
-            border-color: transparent;
+            background: #ffffff;
+            border: none;
+            transition: transform 0.2s, box-shadow 0.2s;
+            color: #000000;
+        }
+
+        .btn-start:hover {
+            transform: scale(1.1);
+            box-shadow: 0 0 20px rgba(185, 185, 185, 0.7);
+            background: #ffffff;
+            color: #000000;
         }
     </style>
 </head>
@@ -33,7 +57,7 @@
 
     <script>
         function openTab() {
-            window.open("{{ url_for('robotrace.init') }}", "_self");
+            window.open("{{ url_for('discovery.init') }}", "_self");
         }
     </script>
     <!-- Bootstrap JS and dependencies -->
