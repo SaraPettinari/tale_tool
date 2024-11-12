@@ -13,7 +13,7 @@ from collections import Counter
 from functools import reduce
 
 from src.xes_handler import merge_xes, csv_to_xes
-from src.utils import log_to_dataframe, create_dfg
+from src.utils import xes_to_df, create_dfg
 from src.plot_creation import space_plot
 
 
@@ -95,7 +95,7 @@ def choose_path():
 def get_resources():
     file_name = request.form['file_name']
     file_path = os.path.join(server.root_path, 'docs', 'logs', file_name)
-    df = log_to_dataframe(file_path)
+    df = xes_to_df(file_path)
 
     resources_list = []
     cases_list = []
@@ -210,7 +210,7 @@ def create_scatter3D():
     filter = data.get('filter')
 
     file_path = files_dict[file_key]
-    df = log_to_dataframe(file_path)
+    df = xes_to_df(file_path)
 
     if case_check:
         filtered_df = df[df['case'] == int(case_select)]
@@ -256,7 +256,7 @@ def create_scatter3D():
 def create_scatter3D_all():
     file_key = 20
     file_path = files_dict[file_key]
-    df = log_to_dataframe(file_path)
+    df = xes_to_df(file_path)
 
     fig = px.scatter_3d(df, x='x', y='y', z='z',
                         color='activity',
@@ -282,7 +282,7 @@ def create_plot_area():
     current_location = data.get('location')
 
     file_path = files_dict[file_key]
-    df = log_to_dataframe(file_path)
+    df = xes_to_df(file_path)
 
     filtered_data = df[df['activity'] == current_location]
     resp = json.loads(filtered_data.to_json())
@@ -308,7 +308,7 @@ def create_2dscatter():
     activity = data.get('activity')
 
     file_path = files_dict[file_key]
-    df = log_to_dataframe(file_path)
+    df = xes_to_df(file_path)
 
     filtered_data = df[df['activity'] == activity]
     resp = json.loads(filtered_data.to_json())
@@ -371,7 +371,7 @@ def case_filtering():
     file_key = data.get('key')
     file_path = files_dict[file_key]
 
-    df = log_to_dataframe(file_path)
+    df = xes_to_df(file_path)
 
     cases = df['case'].unique()
 

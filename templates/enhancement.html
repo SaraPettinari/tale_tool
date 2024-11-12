@@ -4,6 +4,7 @@
 <head lang="en">
     {% block head %}
     <title>RoboTrace</title>
+    <link rel="icon" href="/static/images/robotrace.png"        type="image/x-icon" />
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
     <script type="text/javascript" src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
@@ -90,9 +91,16 @@
 </head>
 
 <body>
+    <!--<nav class="navbar navbar-expand-lg navbar-dark bg-dark shadow-sm">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="/">RoboTrace-enhancement</a>
+        </div>
+    </nav>-->
+    
+
     <div class="sidebar">
         <nav class="navbar navbar-dark">
-            <a class="navbar-brand" href="/">DFG-enhancement</a>
+            <a class="navbar-brand" href="/">Perspectives</a>
             <div class="nav flex-column">
                 <form action="{{ url_for('enhancement.get_global_plot') }}" method="GET"
                     onsubmit="updateHiddenInputs()">
@@ -185,6 +193,7 @@
                             <div id="battery_div" class="card">
                                 <div class="card-body">
                                     <h5 class="card-title">Battery Perspective</h5>
+                                    {% include activity_plots.battery %}
                                 </div>
                             </div>
                         </div>

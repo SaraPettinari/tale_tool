@@ -21,7 +21,7 @@ def csv_to_xes(path):
             remaps[col] = xes_constants.DEFAULT_TIMESTAMP_KEY
         elif 'activity' in col.lower():
             remaps[col] = xes_constants.DEFAULT_NAME_KEY
-        elif ('resource' or 'robot' or 'actor') in col.lower():
+        elif ('resource' in col.lower() ) or ( 'robot' in col.lower() ) or ('actor' in col.lower()):
             remaps[col] = xes_constants.DEFAULT_RESOURCE_KEY
         elif 'lifecycle' in col.lower():
             remaps[col] = xes_constants.DEFAULT_TRANSITION_KEY

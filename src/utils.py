@@ -2,6 +2,8 @@ import sys
 import os
 import xml.etree.ElementTree as ET
 import pandas as pd
+import src.const as cn
+
 from pandas import DataFrame
 from datetime import timedelta
 
@@ -9,66 +11,22 @@ from datetime import timedelta
 import pm4py
 from pm4py.algo.filtering.log.attributes import attributes_filter
 from pm4py.objects.log.importer.xes import importer as xes_importer
+from pm4py.objects.conversion.log import converter as xes_converter
 from pm4py.statistics.attributes.log import get as attr_get
 from pm4py.util import exec_utils
 from pm4py.util import xes_constants as xes
 from pm4py.visualization.dfg.variants.timeline import Parameters, get_min_max_value
 from pm4py.objects.log.util import interval_lifecycle
 from pm4py.algo.transformation.log_to_features import algorithm as log_to_features
+from pm4py.stats import get_case_duration
 ###
 
 ROOT_DIR = os.path.abspath(os.curdir)
 
-
-def log_to_dataframe(log_path):
-    x = []
-    y = []
-    z = []
-    lables = []
-    cases = []
-    times = []
-    resource = []
-    location_activity = []
-    tree = ET.parse(log_path)
-    root = tree.getroot()
-    case = 0
-    lc = []
-    for trace in root.iter('trace'):
-        case += 1
-        for child in trace.iter('event'):
-            for el in child:
-                if el.attrib['key'] == 'x':
-                    x.append(el.attrib['value'])
-                elif el.attrib['key'] == 'y':
-                    y.append(el.attrib['value'])
-                elif el.attrib['key'] == 'z':
-                    z.append(el.attrib['value'])
-                elif el.attrib['key'] == 'concept:name':
-                    lables.append(el.attrib['value'])
-                    cases.append(case)
-                elif el.attrib['key'] == 'time:timestamp':
-                    times.append(el.attrib['value'])
-                elif el.attrib['key'] == 'org:resource':
-                    resource.append(el.attrib['value'])
-                elif el.attrib['key'] == 'activity':
-                    location_activity.append(el.attrib['value'])
-                elif el.attrib['key'] == 'lifecycle:transition':
-                    lc.append(el.attrib['value'])
-
-    df = DataFrame({
-        'x': x, 'y': y, 'z': z, 'activity': lables, 'case': cases, 'timestamp': times, 'lifecycle': lc})
-
-    if len(resource) > 0:
-        df['resource'] = resource
-    if len(location_activity) > 0:
-        df['location_activity'] = location_activity
-
-    # change column types
-    df[df.columns[0:3]] = df.iloc[:, 0:3].astype(float)
-    df['timestamp'] = pd.to_datetime(df['timestamp'])
-    df['case'] = df['case'].astype(int)
-
-    return df
+def xes_to_df(log_path):
+    log = xes_importer.apply(log_path)
+    pd = xes_converter.apply(log, variant=xes_converter.Variants.TO_DATA_FRAME)
+    return pd
 
 def generate_color(activities_count):
     activities_color = {}
@@ -90,6 +48,12 @@ def generate_color(activities_count):
         activities_color[ac] = v1
 
     return activities_color
+
+def generate_performance_color(duration_dict):
+    activities_color = {}
+    
+    min_value, max_value = get_min_max_value(duration_dict)
+    
 
 
 def create_dfg(file_path, filtering_conditions={}):
@@ -243,21 +207,17 @@ def create_performance_dfg(file_path):
     # generate_heatmap_data(file_path)
     log = interval_lifecycle.to_interval(log)
     dfg, start_activities, end_activities = pm4py.discovery.discover_performance_dfg(log)
-    activity_key = exec_utils.get_param_value(
-        Parameters.ACTIVITY_KEY, {}, xes.DEFAULT_NAME_KEY)
-    activity_count = attr_get.get_attribute_values(
-        log, activity_key, parameters={})
     
     nodes = []
     n_check = set()
     edges = []
     id0 = 0
     id1 = 0
-    colors = generate_color(activity_count)
+    colors = generate_color(activity_duration)
     for key in dfg:
         if (key[0] in start_activities):
-            # color = "#ADFF2F"
-            count = start_activities[key[0]]
+            color = "#ADFF2F"
+            count = 'instant'
             edges.append(
                 {'from': 'start_node', 'to': key[0], 'label': count, 'dashes': True})
         color = "#000000"
@@ -265,18 +225,18 @@ def create_performance_dfg(file_path):
             n_check.add(key[0])
             color = colors[key[0]]
             nodes.append({'id': key[0], 'label': key[0], 'color': {
-                'background': color}, 'count': activity_count[key[0]]})
+                'background': color}, 'count': activity_duration[key[0]]})
         color = "#cc99ff"
         if (key[1] in end_activities):
-            # color = "#ff6666"
-            count = end_activities[key[1]]
+            color = "#ff6666"
+            count = 'instant'
             edges.append(
                 {'from': key[1], 'to': 'end_node', 'label': count, 'dashes': True})
         if (not (key[1] in n_check)):
             n_check.add(key[1])
             color = colors[key[1]]
             nodes.append({'id': key[1], 'label': key[1], 'color': {
-                'background': color}, 'count': activity_count[key[1]]})
+                'background': color}, 'count': activity_duration[key[1]]})
 
         mean_sec = round(dfg[key]['mean'], 2)
 
@@ -333,4 +293,12 @@ def get_activity_duration(log):
                 del start_times[activity]
 
     durations_df = DataFrame(activity_durations)
+    durations_df = zip(durations_df, durations_df.median(durations_df['duration']))
     return durations_df
+
+
+def process_battery(log_df : dict):
+    duration_list = {}
+    for case in log_df[cn.CASE]:
+        duration_list[case] = get_case_duration(log_df, case_id=case)
+    print(duration_list)

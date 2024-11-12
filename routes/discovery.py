@@ -2,7 +2,7 @@ import os
 
 from flask import render_template, request, session, Blueprint
 from src.xes_handler import csv_to_xes
-from src.utils import log_to_dataframe, create_dfg, get_file_path
+from src.utils import xes_to_df, create_dfg, get_file_path
 import src.const as cn
 
 discovery = Blueprint('discovery', __name__)
@@ -112,7 +112,7 @@ def get_filters():
     session['file_name'] = file_name
 
     file_path = get_file_path(file_name)
-    df = log_to_dataframe(file_path)
+    df = xes_to_df(file_path)
 
     resources_list = []
     cases_list = []
