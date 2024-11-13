@@ -296,9 +296,3 @@ def get_activity_duration(log):
     durations_df = zip(durations_df, durations_df.median(durations_df['duration']))
     return durations_df
 
-
-def process_battery(log_df : dict):
-    duration_list = {}
-    for case in log_df[cn.CASE]:
-        duration_list[case] = get_case_duration(log_df, case_id=case)
-    print(duration_list)

@@ -35,13 +35,6 @@ h1 {
   font-size: 24pt;
 }
 
-.navbar-light {
-  background-color: #5001b8;
-  /*#5001b8;*/
-  font-family: Tahoma, sans-serif;
-  font-size: 30px;
-}
-
 
 .frame-graph {
   width: 100%;
@@ -235,4 +228,16 @@ svg {
   font-weight: bold;
   padding: 8px 16px;
   border-bottom: 1px solid #ccc;
+}
+
+.navbar-brand {
+  font-weight: bold;
+  font-size: 1.5rem;
+}
+
+.navbar-light {
+  background-color: #5001b8;
+  /*#5001b8;*/
+  font-family: Tahoma, sans-serif;
+  font-size: 30px;
 }

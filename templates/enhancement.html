@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <html lang="en">
 
-<head lang="en">
+<head>
     {% block head %}
     <title>RoboTrace</title>
-    <link rel="icon" href="/static/images/robotrace.png"        type="image/x-icon" />
+    <link rel="icon" href="/static/images/robotrace.png" type="image/x-icon" />
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
     <script type="text/javascript" src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
@@ -28,283 +28,205 @@
     <script src="https://cdn.jsdelivr.net/npm/d3-zoom@3.0.0/dist/d3-zoom.min.js"></script>
     {% endblock %}
     <style>
-        body {
+        body,
+        html {
+            height: 100%;
+            margin: 0;
             display: flex;
-            height: 100vh;
-            overflow: hidden;
+            flex-direction: column;
         }
 
+        /* Navbar */
+        .navbar {
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+
+        /* Sidebar */
         .sidebar {
             width: 250px;
             background-color: #343a40;
-            padding: 20px;
             color: white;
-            flex-shrink: 0;
+            padding: 20px;
+            height: 100vh;
+            position: fixed;
+            overflow-y: auto;
         }
 
         .sidebar .nav-link {
             color: white;
         }
 
+        /* Content Area */
         .content {
-            flex-grow: 1;
-            overflow-y: auto;
+            margin-left: 250px;
             padding: 20px;
-            background-color: #f8f9fa;
-        }
-
-        .navbar-brand {
-            font-weight: bold;
-            font-size: 1.5rem;
-            color: white;
-        }
-
-        .btn-nav {
-            font-size: 0.9rem;
-        }
-
-        .card {
-            margin-bottom: 20px;
-        }
-
-        .offcanvas-header {
-            background-color: #f8f9fa;
-        }
-
-        .card-header {
-            background-color: #f8f9fa;
-        }
-
-        .btn-outline-secondary {
-            border-color: #6c757d;
-        }
-
-        .table th,
-        .table td {
-            vertical-align: middle;
+            overflow-y: auto;
+            flex-grow: 1;
         }
 
         .container-fluid {
             max-width: 1400px;
         }
+
+        /* Plot Cards */
+        .plot-card {
+            margin-bottom: 20px;
+        }
+
+        /* Collapsible Plots */
+        .collapse-toggle {
+            cursor: pointer;
+            color: #5001b8;
+            font-weight: bold;
+        }
     </style>
 </head>
 
 <body>
-    <!--<nav class="navbar navbar-expand-lg navbar-dark bg-dark shadow-sm">
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark shadow-sm">
         <div class="container-fluid">
-            <a class="navbar-brand" href="/">RoboTrace-enhancement</a>
+            <a class="navbar-brand" style="font-size: 1.5rem;" href="/">RoboTrace-enhancement</a>
         </div>
-    </nav>-->
-    
+    </nav>
 
-    <div class="sidebar">
-        <nav class="navbar navbar-dark">
-            <a class="navbar-brand" href="/">Perspectives</a>
-            <div class="nav flex-column">
-                <form action="{{ url_for('enhancement.get_global_plot') }}" method="GET"
-                    onsubmit="updateHiddenInputs()">
-                    <input type="checkbox" class="btn-check" id="btn-check-performance" name="performance" value="1"
-                        autocomplete="off">
-                    <label class="nav-link btn btn-outline-light" for="btn-check-performance">
-                        <i class="bi bi-clock-history" title="See Performance Graph"></i> Performance
-                    </label>
-
-                    <input type="checkbox" class="btn-check" id="btn-check-space" name="space" value="1"
-                        autocomplete="off">
-                    <label class="nav-link btn btn-outline-light" for="btn-check-space">
-                        <i class="bi bi-map" title="See Space Plot"></i> Space
-                    </label>
-
-                    <input type="checkbox" class="btn-check" id="btn-check-time" name="time" value="1"
-                        autocomplete="off">
-                    <label class="nav-link btn btn-outline-light" for="btn-check-time">
-                        <i class="bi bi-calendar-range" title="See Time Plot"></i> Time
-                    </label>
-
-                    <input type="checkbox" class="btn-check" id="btn-check-battery" name="battery" value="1"
-                        autocomplete="off">
-                    <label class="nav-link btn btn-outline-light" for="btn-check-battery">
-                        <i class="bi bi-battery-half" title="See Battery Plot"></i> Battery
-                    </label>
-
-                    <input type="checkbox" class="btn-check" id="btn-check-msg" name="communication" value="1"
-                        autocomplete="off">
-                    <label class="nav-link btn btn-outline-light" for="btn-check-msg">
-                        <i class="bi bi-chat" title="See Communication Plot"></i> Communication
-                    </label>
-                    <div class="d-flex justify-content-center">
-                        <button type="submit" class="btn btn-outline-light">Apply</button>
-                    </div>
-                </form>
-            </div>
-        </nav>
+    <!-- Sidebar -->
+    <div class="d-flex flex-column flex-lg-row">
+        <div class="sidebar">
+            <nav class="navbar navbar-dark">
+                <p class="navbar-brand">Perspectives</p>
+                <div class="nav flex-column">
+                    <form action="{{ url_for('enhancement.get_global_plot') }}" method="GET">
+                        <input type="checkbox" class="btn-check" id="btn-check-performance" name="performance" value="1">
+                        <label class="nav-link btn btn-outline-light" for="btn-check-performance">
+                            <i class="fa fa-clock" title="See Performance Graph"></i> Performance
+                        </label>
+                        <input type="checkbox" class="btn-check" id="btn-check-space" name="space" value="1">
+                        <label class="nav-link btn btn-outline-light" for="btn-check-space">
+                            <i class="fa fa-map" title="See Space Plot"></i> Space
+                        </label>
+                        <input type="checkbox" class="btn-check" id="btn-check-time" name="time" value="1">
+                        <label class="nav-link btn btn-outline-light" for="btn-check-time">
+                            <i class="fa fa-calendar" title="See Time Plot"></i> Time
+                        </label>
+                        <input type="checkbox" class="btn-check" id="btn-check-battery" name="battery" value="1">
+                        <label class="nav-link btn btn-outline-light" for="btn-check-battery">
+                            <i class="fa fa-battery-half" title="See Battery Plot"></i> Battery
+                        </label>
+                        <input type="checkbox" class="btn-check" id="btn-check-msg" name="communication" value="1">
+                        <label class="nav-link btn btn-outline-light" for="btn-check-msg">
+                            <i class="fa fa-comment" title="See Communication Plot"></i> Communication
+                        </label>
+                        <div class="d-flex justify-content-center">
+                            <button type="submit" class="btn btn-outline-light">Apply</button>
+                        </div>
+                    </form>
+                </div>
+            </nav>
+        </div>
     </div>
 
     <div class="content">
-        <div class="container-fluid card">
-            <div class="d-flex justify-content-end mb-3">
-                <div class="btn-group">
-                    <button id="toggle-button" class="btn btn-outline-secondary" title="Change Graph Direction"><i
-                            class="bi bi-arrow-repeat" aria-hidden="true"></i>
-                    </button>
-                    <button onclick="downloadGraph()" class="btn btn-outline-secondary" title="Download SVG"><i
-                            class="bi bi-download" aria-hidden="true"></i>
-                    </button>
+        <div class="container-fluid">
+                <!-- Process Area -->
+                <div class="plot-card card">
+                    <div class="card-header">
+                        <span class="collapse-toggle" data-bs-toggle="collapse" data-bs-target="#control_flow">
+                            <i class="fa fa-spinner"></i> Control-flow Perspective
+                        </span>
+                    </div>
+                    <div id="control_flow" class="collapse show card-body">
+                        <div class="d-flex justify-content-end mb-3">
+                            <div class="btn-group">
+                                <button id="toggle-button" class="btn btn-outline-secondary" title="Change Graph Direction"><i
+                                        class="bi bi-arrow-repeat" aria-hidden="true"></i>
+                                </button>
+                                <button onclick="downloadGraph()" class="btn btn-outline-secondary" title="Download SVG"><i
+                                        class="bi bi-download" aria-hidden="true"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div id="graph-container" style="height: 300px;"></div>
+                    </div>
                 </div>
-            </div>
-            <div id="graph-container" style="height: 300px;"></div>
+           
         </div>
 
+
+        <!-- Plots Area -->
         <div class="container-fluid mt-3">
             <div class="row">
-                <div class="col-md-6">
-                    {% if session.measures %}
-                    <div class="row">
-                        {% set activity_plots = session.measures.get(session.current_activity,
-                        session.measures['global']) %}
-                        {% if activity_plots.space %}
-                        <div class="col">
-                            <div id="space_div" class="card">
-                                <div class="card-body">
-                                    <h5 class="card-title">Space Perspective</h5>
-                                    <!--<label class="toggle">
-                                        <input type="checkbox">
-                                        <span class="slider"></span>
-                                        <span class="labels" data-on="3D" data-off="Heatmap"></span>
-                                    </label>-->
-                                    {% include activity_plots.space %}
-                                </div>
-                            </div>
-                        </div>
-                        {% endif %}
-                        {% if activity_plots.time %}
-                        <div class="col">
-                            <div id="time_div" class="card">
-                                <div class="card-body">
-                                    <h5 class="card-title">Time Perspective</h5>
-                                    {% include activity_plots.time %}
-                                </div>
-                            </div>
-                        </div>
-                        {% endif %}
-                        {% if activity_plots.battery %}
-                        <div class="col">
-                            <div id="battery_div" class="card">
-                                <div class="card-body">
-                                    <h5 class="card-title">Battery Perspective</h5>
-                                    {% include activity_plots.battery %}
-                                </div>
-                            </div>
-                        </div>
-                        {% endif %}
-                    </div>
-                    {% endif %}
-                    <div class="row">
-                        <div class="col">
-                            <div class="card"></div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Query over activities -->
-        <div hidden class="col-4">
-            <form action="{{ url_for('enhancement.see_plot') }}" method="GET">
-                <input id="activity_id" name="activity_id" value="" />
-                <div id="activity_space">
-                    <input id="space" name="space" value="" />
-                    <input id="see_space_graph" type="submit" />
-                </div>
-                <div id="activity_time">
-                    <input id="time" name="time" value="" />
-                    <input id="see_time_graph" type="submit" />
-                </div>
-                <div id="activity_energy">
-                    <input id="energy" name="energy" value="" />
-                    <input id="see_energy_graph" type="submit" />
-                </div>
-            </form>
-        </div>
-        <!-- Context menu -->
-        <div id="context-menu" class="context-menu">
-            <div class="context-menu-title">Measures</div>
-            <div id="space-menu" class="context-menu-option">Space</div>
-            <div id="time-menu" class="context-menu-option">Time</div>
-            <div id="energy-menu" class="context-menu-option">Energy</div>
-        </div>
-        <div class="row">
-            <div class="col-md-6">
                 {% if session.measures %}
-                <div class="row">
-                    {% set activity_plots = session.measures.get(session.current_activity, session.measures['global'])
-                    %}
-                    {% if activity_plots.space %}
-                    <div class="col">
-                        <div id="space_div" class="card">
-                            <div class="card-body">
-                                <h5 class="card-title">Space Perspective</h5>
-                                <!--<label class="toggle">
-                                    <input type="checkbox">
-                                    <span class="slider"></span>
-                                    <span class="labels" data-on="3D" data-off="Heatmap"></span>
-                                </label>-->
-                                {% include activity_plots.space %}
-                            </div>
+                {% set activity_plots = session.measures.get(session.current_activity, session.measures['global'])
+                %}
+
+                <!-- Space Plot -->
+                {% if activity_plots.space %}
+                <div class="col-md-6">
+                    <div class="plot-card card">
+                        <div class="card-header">
+                            <span class="collapse-toggle" data-bs-toggle="collapse" data-bs-target="#space_div">
+                                <i class="fa fa-map"></i> Space Perspective
+                            </span>
+                        </div>
+                        <div id="space_div" class="collapse show card-body">
+                            {% for plot in activity_plots.space %}
+                            {% include plot %}
+                            {% endfor %}
                         </div>
                     </div>
-                    {% endif %}
-                    {% if activity_plots.time %}
-                    <div class="col">
-                        <div id="time_div" class="card">
-                            <div class="card-body">
-                                <h5 class="card-title">Time Perspective</h5>
-                                {% include activity_plots.time %}
-                            </div>
-                        </div>
-                    </div>
-                    {% endif %}
-                    {% if activity_plots.battery %}
-                    <div class="col">
-                        <div id="battery_div" class="card">
-                            <div class="card-body">
-                                <h5 class="card-title">Battery Perspective</h5>
-                            </div>
-                        </div>
-                    </div>
-                    {% endif %}
                 </div>
                 {% endif %}
-                <div class="row">
-                    <div class="col">
-                        <div class="card"></div>
+
+                <!-- Time Plot -->
+                {% if activity_plots.time %}
+                <div class="col-md-6">
+                    <div class="plot-card card">
+                        <div class="card-header">
+                            <span class="collapse-toggle" data-bs-toggle="collapse" data-bs-target="#time_div">
+                                <i class="fa fa-calendar"></i> Time Perspective
+                            </span>
+                        </div>
+                        <div id="time_div" class="collapse show card-body">
+                            {% for plot in activity_plots.time %}
+                            {% include plot %}
+                            {% endfor %}
+                        </div>
                     </div>
                 </div>
+                {% endif %}
+
+                <!-- Battery Plot -->
+                {% if activity_plots.battery %}
+                <div class="col-md-6">
+                    <div class="plot-card card">
+                        <div class="card-header">
+                            <span class="collapse-toggle" data-bs-toggle="collapse" data-bs-target="#battery_div">
+                                <i class="fa fa-battery-half"></i> Battery Perspective
+                            </span>
+                        </div>
+                        <div id="battery_div" class="collapse show card-body">
+                            {% for plot in activity_plots.battery %}
+                            {% include plot %}
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+
+
+                {% else %}
+                <p>No measures data available to display.</p>
+                {% endif %}
             </div>
         </div>
     </div>
-
 
     <script>
         const response_data = {{ session.response_data|default ("") | tojson }};
         generate_dagre(response_data);
-
-        function updateHiddenInputs() {
-            // Iterate through all checkboxes
-            document.querySelectorAll('.btn-check').forEach(function (checkbox) {
-                // Check if the checkbox is checked
-                if (checkbox.checked) {
-                    // Create a hidden input if the checkbox is checked
-                    let hiddenInput = document.createElement('input');
-                    hiddenInput.type = 'hidden';
-                    hiddenInput.name = checkbox.name;
-                    hiddenInput.value = checkbox.value;
-                    // Append the hidden input to the form
-                    checkbox.closest('form').appendChild(hiddenInput);
-                }
-            });
-        }
     </script>
 </body>
 

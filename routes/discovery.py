@@ -31,8 +31,6 @@ def init():
             if 'response_data' in session.keys():
                 session['response_data'] = ''
                 
-    #session['communication'] = ''
-    #session['space'] = 'home/space_plot.html'
     session[cn.MEASURES] = {cn.ALL: {}}
                 
     return render_template(gui_interface)
@@ -117,12 +115,12 @@ def get_filters():
     resources_list = []
     cases_list = []
 
-    if 'resource' in df.keys():
-        resources = df["resource"].unique()
+    if cn.RESOURCE in df.keys():
+        resources = df[cn.RESOURCE].unique()
         resources_list = list(resources.tolist())
 
-    if 'case' in df.keys():
-        cases = df['case'].unique()
+    if cn.CASE in df.keys():
+        cases = df[cn.CASE].unique()
         cases_list = list(cases.tolist())
 
     data_dict[file_name] = {
