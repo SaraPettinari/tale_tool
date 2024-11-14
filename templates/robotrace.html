@@ -7,7 +7,7 @@
     {% block head %}
     {{ super() }}
     <title>RoboTrace | Discovery </title>
-    
+
     <style>
         .btn-nav {
             font-size: 0.9rem;
@@ -49,41 +49,42 @@
         </div>
     </nav>
 
-    <div class="offcanvas offcanvas-start" id="demo">
+    <div class="offcanvas offcanvas-start" id="filter-tab">
         <div class="offcanvas-header">
             <h5 class="offcanvas-title">Handle {{ session.file_name }}</h5>
             <button type="button" class="btn-close" data-bs-dismiss="offcanvas"></button>
         </div>
         <div class="offcanvas-body">
-            {% if session.files %}
+            {% if session.fdata %}
             <div class="card">
                 <div class="card-header">
                     <h4>Filtering</h4>
                 </div>
                 <div class="card-body">
+                    {% set filter = session.fdata.filters %}
                     <form id="filters" action="{{url_for('discovery.discover_dfg')}}" method="GET">
-                        {% if session.fdata.resources %}
+                        {% if filter.resources %}
                         <div class="mb-3">
                             <label for="selectRes" class="form-label">
                                 <h5>Resources</h5>
                             </label>
                             <select class="form-select" name="resource_option" id="selectRes">
                                 <option value="none" selected>None</option>
-                                {% for resource in session.fdata.resources %}
+                                {% for resource in filter.resources %}
                                 <option value="{{resource}}" {% if resource_opt==resource %} selected {% endif %}>{{
                                     resource }}</option>
                                 {% endfor %}
                             </select>
                         </div>
                         {% endif %}
-                        {% if session.fdata.cases %}
+                        {% if filter.cases %}
                         <div class="mb-3">
                             <label for="selectCase" class="form-label">
                                 <h5>Cases</h5>
                             </label>
                             <select class="form-select" name="case_option" id="selectCase">
                                 <option value="none" selected>None</option>
-                                {% for case in session.fdata.cases %}
+                                {% for case in filter.cases %}
                                 <option value="{{case}}" {% if case_opt==case %} selected {% endif %}>{{ case }}
                                 </option>
                                 {% endfor %}
@@ -91,7 +92,7 @@
                             <input type="hidden" name="file_name" value="{{session.file_name}}" />
                         </div>
                         {% endif %}
-                        <button type="submit" class="btn btn-outline-secondary">Apply Filters</button>
+                        <button type="submit" class="btn btn-outline-secondary" title="Discover filtered DFG">Discover!</button>
                     </form>
                 </div>
             </div>
@@ -106,7 +107,7 @@
                     <form action="select-logs" method="POST" enctype="multipart/form-data">
                         <label for="file" class="form-label">Select Event Log Files</label>
                         <div class="input-group">
-                            <input class="form-control" type="file" name="file" multiple />
+                            <input class="form-control" type="file" name="file" />
                             <button class="btn btn-outline-secondary" type="submit">Upload</button>
                         </div>
                     </form>
@@ -127,7 +128,9 @@
             </div>
         </div>
 
-        {% if session.files and session.files | length > 0 %}
+
+        {% if session.file_name %}
+
         <div class="row justify-content-center">
             <table class="table table-striped">
                 <thead>
@@ -139,18 +142,16 @@
                     </tr>
                 </thead>
                 <tbody>
-                    {% for value in session.files %}
+                    {% set value = session.file_name %}
                     <tr id="{{value}}">
                         <td>{{ value }}</td>
                         <td>
-                            <form action="{{ url_for('discovery.get_filters') }}" method="POST">
-                                <input type="hidden" name="file_name" value="{{value}}" />
-                                <button class="btn btn-outline-dark" type="submit">Create Filters</button>
-                            </form>
                             <button class="btn btn-outline-dark" type="button" data-bs-toggle="offcanvas"
-                                data-bs-target="#demo">Handle Data</button>
+                                data-bs-target="#filter-tab"><i class="fa fa-filter" aria-hidden="true"></i>
+                                 Filter Log</button>
                         </td>
                         <td>
+                            <div style="display: flex; gap: 10px;">
                             <form action="{{ url_for('discovery.discover_dfg') }}" method="POST">
                                 <input type="hidden" name="file_name" value="{{value}}" />
                                 <button class="btn btn-outline-dark" type="submit">Discover Process</button>
@@ -162,7 +163,7 @@
                                     localStorage.setItem('sharedContent', document.getElementById('graph-container').innerHTML);
                                     window.open("{{ url_for('enhancement.measurements_gui') }}", "_blank");
                                 }
-                            </script>
+                            </script></div>
                         </td>
                         <td>
                             <form action="{{ url_for('discovery.init') }}" method="POST">
@@ -172,7 +173,6 @@
                             </form>
                         </td>
                     </tr>
-                    {% endfor %}
                 </tbody>
             </table>
         </div>

@@ -39,7 +39,9 @@ def get_global_plot():
             (nodes, edges) = create_performance_dfg(file_path)
             session[cn.RESP] = {'nodes': nodes, 'edges': edges}
         else: # Create measures plot
-            fig_path = get_plot(key, file_path)
+            df = xes_to_df(file_path)
+                
+            fig_path = get_plot(key, df)
             session[cn.MEASURES][cn.ALL][key] = fig_path
     return render_template(gui_interface)
 

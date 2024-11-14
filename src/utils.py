@@ -1,11 +1,7 @@
-import sys
 import os
-import xml.etree.ElementTree as ET
-import pandas as pd
 import src.const as cn
 
 from pandas import DataFrame
-from datetime import timedelta
 
 #PM4PY imports
 import pm4py
@@ -17,8 +13,6 @@ from pm4py.util import exec_utils
 from pm4py.util import xes_constants as xes
 from pm4py.visualization.dfg.variants.timeline import Parameters, get_min_max_value
 from pm4py.objects.log.util import interval_lifecycle
-from pm4py.algo.transformation.log_to_features import algorithm as log_to_features
-from pm4py.stats import get_case_duration
 ###
 
 ROOT_DIR = os.path.abspath(os.curdir)
@@ -58,19 +52,24 @@ def generate_performance_color(duration_dict):
 
 def create_dfg(file_path, filtering_conditions={}):
     log = xes_importer.apply(file_path)
-    parameters_filter = {attributes_filter.Parameters.ATTRIBUTE_KEY: "lifecycle:transition"}
+    parameters_filter = {attributes_filter.Parameters.ATTRIBUTE_KEY: cn.LIFECYCLE}
     log_neg = attributes_filter.apply(log, ['start', 'complete'], parameters=parameters_filter)
     
     log = interval_lifecycle.to_interval(log_neg)
 
+    # Check if there are some filtering conditions
     if len(filtering_conditions) > 0:
         for condition in filtering_conditions.keys():
-            parameters_filter = {attributes_filter.Parameters.ATTRIBUTE_KEY: condition}
-            tracefilter = attributes_filter.apply(log, [filtering_conditions[condition]], parameters=parameters_filter)
-        dfg, start_activities, end_activities = pm4py.discovery.discover_dfg(
-            tracefilter)
-    else:
-        dfg, start_activities, end_activities = pm4py.discovery.discover_dfg(
+            if not condition == cn.CASE:
+                parameters_filter = {attributes_filter.Parameters.ATTRIBUTE_KEY: condition}
+                condition_value = filtering_conditions[condition]
+                traceattr = attributes_filter.apply(log, [condition_value],  parameters=parameters_filter)
+            else:
+                parameters_filter = {attributes_filter.Parameters.CASE_ID_KEY: condition}
+                condition_value = str(filtering_conditions[condition])
+                traceattr = attributes_filter.apply(log, [condition_value],  parameters=parameters_filter)
+        
+    dfg, start_activities, end_activities = pm4py.discovery.discover_dfg(
             log)
         
   
@@ -272,24 +271,21 @@ def get_activity_duration(log):
     # Dictionary to store start times for each activity
         start_times = {}
         
-        # Iterate over each event in the trace
         for event in trace:
-            activity = event['concept:name']
-            lifecycle = event['lifecycle:transition']
-            timestamp = event['time:timestamp']
+            activity = event[cn.ACTIVITY]
+            lifecycle = event[cn.LIFECYCLE]
+            timestamp = event[cn.TIMESTAMP]
             
             # Check if it's a start or complete event
             if lifecycle == 'start':
                 start_times[activity] = timestamp
             elif lifecycle == 'complete' and activity in start_times:
-                # Calculate duration
                 duration = timestamp - start_times[activity]
                 activity_durations.append({
                     'trace_id': trace.attributes['concept:name'],
                     'activity': activity,
                     'duration': duration.total_seconds()  # Convert to seconds
                 })
-                # Remove the start time after calculating duration
                 del start_times[activity]
 
     durations_df = DataFrame(activity_durations)

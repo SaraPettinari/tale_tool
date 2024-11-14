@@ -7,9 +7,7 @@ from src.utils import xes_to_df
 from functools import reduce
 import src.const as cn
 
-def get_plot(measure, file_path):
-    df = xes_to_df(file_path)
-    
+def get_plot(measure, df):    
     if measure == cn.SPACE:
         return get_space_plot(df)
     elif measure == cn.TIME:
@@ -164,6 +162,7 @@ def get_battery_plot(df):
 
 
 def get_communication_graph(this_df):
+    template_path = []
     df = pd.DataFrame(generate_comm_data(this_df))
     # Assuming 'start_time' and 'complete_time' are in string format, convert them to datetime
     df['start_time'] = pd.to_datetime(df['start_time'])
@@ -190,13 +189,13 @@ def get_communication_graph(this_df):
     # Merge the counts of rows for each activities into the grouped data DataFrame
     grouped_data = pd.merge(grouped_data, activities_counts, on=cn.ACTIVITY)
     
-    fig = px.bar(grouped_data, x="activity", y=["received_msgs", "lost_msgs"], text_auto=True)
+    fig = px.bar(grouped_data, x=cn.ACTIVITY, y=["received_msgs", "lost_msgs"], text_auto=True)
 
-    fig.update_layout(xaxis_title="activity", yaxis_title="Messages Count",
+    fig.update_layout(xaxis_title=cn.ACTIVITY, yaxis_title="Messages Count",
                     title="Communication Metrics")
 
 
-    out_file = "commumication_plot.html"
+    out_file = cn.COMM + "_plot.html"
     
     plot_path =  os.path.join(os.getcwd(), "templates", "home")
     if not os.path.exists(plot_path):
@@ -205,7 +204,8 @@ def get_communication_graph(this_df):
     
     fig.write_html(fig_path)
     
-    template_path = "home" + '/' + out_file
+    fig_path = "home" + '/' + out_file
+    template_path.append(fig_path)
     print(template_path)
     return(template_path)
 
