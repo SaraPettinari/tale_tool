@@ -2,7 +2,7 @@ import os
 
 from flask import render_template, request, session, Blueprint
 from src.xes_handler import csv_to_xes
-from src.utils import xes_to_df, create_dfg, get_file_path, create_performance_dfg, create_generalized_dfg, store_filtered_log
+from src.utils import xes_to_df, get_file_path, create_performance_dfg, create_generalized_dfg, store_filtered_log
 import src.const as cn
 
 discovery = Blueprint('discovery', __name__)
@@ -13,7 +13,7 @@ resources_list = []
 data_dict = {}
 file_name = None
 
-gui_interface = 'robotrace.html'
+gui_interface = 'discovery.html'
 ROOT_DIR = os.path.abspath(os.curdir)
 
 
@@ -137,20 +137,20 @@ def discover_dfg():
         file_name = request.form[cn.FILE]
         file_path = session[cn.FILE_LIST][file_name]
         session[cn.PATH] = file_path
-        (nodes, edges) = create_dfg(file_path)
+        (nodes, edges) = create_generalized_dfg(file_path)
         session[cn.RESP] = {'nodes': nodes, 'edges': edges}
 
         session['plot_file'] = {}
         return render_template(gui_interface, button_pressed='btn1')
 
 
-@discovery.route('/discover-performance', methods=['GET', 'POST'])
+@discovery.route('/discover-performance', methods=['POST'])
 def discover_performance():    
     if request.method == 'POST':
         file_name = request.form[cn.FILE]
-        file_path = get_file_path(file_name)
+        file_path = session[cn.FILE_LIST][file_name]
         session[cn.PATH] = file_path
-        (nodes, edges) = create_performance_dfg(file_path)
+        (nodes, edges) = create_generalized_dfg(file_path, is_performance=True)
         session[cn.RESP] = {'nodes': nodes, 'edges': edges}
 
         session['plot_file'] = {}

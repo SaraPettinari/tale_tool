@@ -55,14 +55,16 @@ def create_generalized_dfg(file_path, is_performance=False):
     log = xes_importer.apply(file_path)
     
 
-    # Convert to interval lifecycle if needed
-    log = interval_lifecycle.to_interval(log)
-
     # Discover the requested DFG
     if is_performance:
-        dfg, start_activities, end_activities = pm4py.discovery.discover_performance_dfg(log)
         activity_stats = get_activity_duration(log)
+        # Convert to interval lifecycle if needed
+        log = interval_lifecycle.to_interval(log)
+        dfg, start_activities, end_activities = pm4py.discovery.discover_performance_dfg(log)
+        
     else:
+        # Convert to interval lifecycle if needed
+        log = interval_lifecycle.to_interval(log)
         dfg, start_activities, end_activities = pm4py.discovery.discover_dfg(log)
         activity_stats = attr_get.get_attribute_values(
             log, exec_utils.get_param_value(Parameters.ACTIVITY_KEY, {}, xes.DEFAULT_NAME_KEY)
@@ -227,22 +229,35 @@ def store_filtered_log(file_path, conditions: dict):
     Parameters
     ----------
         file_path (str): Path to the original file.
-        log: The log object to be exported.
         conditions (dict): Dictionary of conditions to append to the file name.
     """
     
     log = xes_importer.apply(file_path)
     
+    parameters_filter = {}
 
     for condition, condition_value in conditions.items():
+        temp_log = log
+
+        # If the condition is based on the CASE_ID
         if condition == cn.CASE:
-            parameters_filter = {attributes_filter.Parameters.CASE_ID_KEY: condition}
+            parameters_filter = {
+                attributes_filter.Parameters.CASE_ID_KEY: condition, 
+                attributes_filter.Parameters.POSITIVE : True}
+            condition_value = str(condition_value)
+            traceattr = attributes_filter.apply_trace_attribute(
+                temp_log, [condition_value], parameters=parameters_filter
+            )
         else:
-            parameters_filter = {attributes_filter.Parameters.ATTRIBUTE_KEY: condition}
+            parameters_filter = {
+                attributes_filter.Parameters.ATTRIBUTE_KEY: condition, 
+                attributes_filter.Parameters.POSITIVE : True}
+            traceattr = attributes_filter.apply_events(
+                temp_log, [condition_value], parameters=parameters_filter
+            )
         
-        traceattr = attributes_filter.apply(
-            log, [condition_value], parameters=parameters_filter
-        )
+        log = traceattr
+
         
         
     condition_name = ''.join([f'_{key}_{value}' for key, value in conditions.items()])
