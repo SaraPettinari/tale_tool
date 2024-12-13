@@ -1,90 +1,78 @@
 uploaded_files = null;
 
 function generate_dagre(data) {
-    console.log(data)
-    nodes = []
-    console.log(data)
+    console.log('graph', data)
 
     var g = new dagre.graphlib.Graph({
         multigraph: true,
         compound: true,
         multiedgesep: 10,
-        multiranksep: 50
+        multiranksep: 60
     });
 
-    console.log(g)
-
     // Set an object for the graph label
-    g.setGraph({ rankdir: 'LR', nodesep: 25 });
+    g.setGraph({ rankdir: 'LR', nodesep: 40, ranksep: 100 });
 
     // Default to assigning a new object as a label for each new edge.
     g.setDefaultEdgeLabel(function () { return {}; });
 
     dagre.layout(g);
 
-
     for (n in data.nodes) {
-        //node_data.push({ id: in_data.nodes[n]['Event_Id'], properties: in_data.nodes[n] })
         node = data.nodes[n]
         if (node.label != null) {
             node.label = node.label.replaceAll("_", "\n")
+            if (node.count){
+                node.label = node.label + "\n (" + node.count + ")"
+            }
+        }
+        console.log(node)
+        if (!node.color) {
+            node.color = '{background: #e6e3e3e3}'
         }
 
-        g.setNode(node.id, { label: node.label, labelStyle: "font-size: 22px" })
+        g.setNode(node.id, { 
+            label: node.label,
+            labelStyle: "font-size: 20px; text-align: center;",
+            color: node.color.background
+        });
     }
 
     g.nodes().forEach(function (v) {
         var node = g.node(v);
+
+        node.rx = node.ry = 12;
+
         if (node.label === 'start') {
             node.shape = 'circle';
-            node.r = 15; // Radius of the circle
+            node.r = 30; // Radius of the circle
             node.style = 'fill: lightgreen';
         } else if (node.label === 'end') {
             node.shape = 'circle';
-            node.r = 15;
+            node.r = 30;
             node.style = 'fill: #E55451';
         }
         else {
             node.shape = 'rect';
-            node.style = 'fill: #e6e3e3e3;'
+            node.style = 'fill: ' + node.color;
         }
-        // Round the corners of the nodes
-        node.rx = node.ry = 5;
+        
     });
 
-    edges = []
     for (e in data.edges) {
         edge = data.edges[e]
         edge_label = edge.label
-        //        edge_properties = edge.edge_properties
-        //"edge_weight": 1,   "CorrelationType": "Message",
-        /*
-        edge_weight = edge_properties.edge_weight
-        edge_info = edge_weight + '(' + edge_properties.CorrelationType + ')\n:' + edge_label
-        visibility = 'visible'
-        if ((edge_weight > 0 && edge_weight < 6) || (edge_weight > 10 && edge_weight < 50)) {
-            visibility = 'hidden'
-        }
-        if (edge_weight >= 4) {
-            edge_weight = edge_weight / 20
-        }
-        if (edge_weight == '') {
-            edge_weight = 1
-        }*/
+
         g.setEdge(edge.from, edge.to, {
             label: edge_label,
             name: edge.from + '-' + edge_label + '-' + edge.to,
             curve: d3.curveBasis,
             labelpos: 'c', // label position to center
-            labeloffset: -10, // y offset to decrease edge-label separation
+            labeloffset: -15, // y offset to decrease edge-label separation
         })
     }
 
-    
-
-    elements = nodes.concat(edges)
-    console.log(nodes)
-
+    console.log('g', g)
     const svg = d3.select('#graph-container').append('svg');
     const svgGroup = svg.append('g');
 

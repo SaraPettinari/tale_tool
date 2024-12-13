@@ -58,7 +58,38 @@ h1 {
   background-color: #ffffff;
 }
 
+.btn-csv {
+  background-color: #e68e54;
+  border-color: #e68e54;
+  color: white;
+}
 
+.bg-csv {
+  background-color: #e68e54;
+  border-color: #e68e54;
+}
+
+.btn-tale {
+  background-color: #8f9eff;
+  border-color: #8f9eff;
+  color: white;
+}
+
+.bg-tale {
+  background-color: #8f9eff;
+  border-color: #8f9eff;
+}
+
+.btn-purple {
+  background-color: #5001b8;
+  border-color: #5001b8;
+  color: white;
+}
+
+.bg-purple {
+  background-color: #5001b8;
+  border-color: #5001b8;
+}
 
 /* Switch button */
 .toggle {
@@ -156,7 +187,6 @@ h1 {
 .node rect {
   stroke: #333;
   stroke-width: 2px;
-  fill: #e6e3e3e3;
 }
 
 .node text {

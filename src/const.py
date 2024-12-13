@@ -11,6 +11,7 @@ COMM = 'communication'
 TIME = 'time'
 BATTERY = 'battery'
 PERFORMANCE = 'performance'
+FREQUENCY = 'frequency'
 
 PATH = 'curr_path'
 

@@ -2,14 +2,12 @@ import os
 
 from flask import render_template, request, session, Blueprint
 from src.xes_handler import csv_to_xes
-from src.utils import xes_to_df, create_dfg, get_file_path
+from src.utils import xes_to_df, create_dfg, get_file_path, create_performance_dfg
 import src.const as cn
-import pandas as pd
 
 discovery = Blueprint('discovery', __name__)
 
 files_dict = {}
-resp_list = []
 resources_list = []
 
 data_dict = {}
@@ -27,12 +25,14 @@ def init():
         file_name = request.form[cn.FILE]
         if file_name in data_dict.keys():
             data_dict.pop(file_name)
-            resp_list.remove(file_name)
             session['files'] = data_dict
-            if 'response_data' in session.keys():
-                session['response_data'] = ''
+            if cn.RESP in session.keys():
+                session[cn.RESP] = ''
+            if session[cn.FILE] == file_name:
+                session[cn.FILE] = ''
                 
     session[cn.MEASURES] = {cn.ALL: {}}
+    session[cn.RESP] = ''
                 
     return render_template(gui_interface)
 
@@ -112,17 +112,57 @@ def discover_dfg():
                                     filtering_conditions)
 
 
-        session['response_data'] = {'nodes': nodes, 'edges': edges}
+        session[cn.RESP] = {'nodes': nodes, 'edges': edges}
 
-        return render_template(gui_interface)
+        return render_template(gui_interface, button_pressed='btn1')
 
     elif request.method == 'POST':
         file_name = request.form[cn.FILE]
         file_path = get_file_path(file_name)
         session[cn.PATH] = file_path
         (nodes, edges) = create_dfg(file_path)
-        session['response_data'] = {'nodes': nodes, 'edges': edges}
+        session[cn.RESP] = {'nodes': nodes, 'edges': edges}
 
         session['plot_file'] = {}
-        return render_template(gui_interface)
+        return render_template(gui_interface, button_pressed='btn1')
+
+
+@discovery.route('/discover-performance', methods=['GET', 'POST'])
+def discover_performance():    
+    if request.method == 'GET':
+        file_name = request.args.get(cn.FILE)
+        file_path = get_file_path(file_name)
+        session[cn.PATH] = file_path
+        res_opt = request.args.get('resource_option')
+        case_opt = request.args.get('case_option')
+        
+        if (res_opt == 'none' and case_opt == 'none'):
+            filtering_conditions = {}
+        else:
+            filtering_conditions = {}
+            if res_opt != 'none':
+                filtering_conditions[cn.RESOURCE] = res_opt
+                session['resource_opt'] = res_opt
+            if case_opt != 'none':
+                selected_case = int(case_opt)
+                filtering_conditions[cn.CASE] = selected_case
+                session['case_opt'] = int(case_opt)
+
+        (nodes, edges) = create_performance_dfg(file_path,
+                                    filtering_conditions)
+
+
+        session[cn.RESP] = {'nodes': nodes, 'edges': edges}
+
+        return render_template(gui_interface, button_pressed='btn2')
+
+    elif request.method == 'POST':
+        file_name = request.form[cn.FILE]
+        file_path = get_file_path(file_name)
+        session[cn.PATH] = file_path
+        (nodes, edges) = create_performance_dfg(file_path)
+        session[cn.RESP] = {'nodes': nodes, 'edges': edges}
+
+        session['plot_file'] = {}
+        return render_template(gui_interface, button_pressed='btn2')
 

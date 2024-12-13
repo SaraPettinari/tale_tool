@@ -3,5 +3,8 @@
 /docs/logs/*
 /extra
 /utils
-/*venv
+/*env
+/.vscode
+
+
 .DS_Store

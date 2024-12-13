@@ -12,63 +12,6 @@
     <script src='https://cdn.plot.ly/plotly-2.9.0.min.js'></script>
     <script type="text/javascript" src="{{ url_for('static', filename='js/plots.js') }}"></script>
 
-    <style>
-        body,
-        html {
-            height: 100%;
-            margin: 0;
-            display: flex;
-            flex-direction: column;
-        }
-
-        /* Navbar */
-        .navbar {
-            position: sticky;
-            top: 0;
-            z-index: 1000;
-        }
-
-        /* Sidebar */
-        .sidebar {
-            width: 250px;
-            background-color: #343a40;
-            color: white;
-            padding: 20px;
-            height: 100vh;
-            position: fixed;
-            overflow-y: auto;
-        }
-
-        .sidebar .nav-link {
-            color: white;
-            font-size: medium;
-        }
-
-        /* Content Area */
-        .content {
-            margin-left: 250px;
-            padding: 20px;
-            overflow-y: auto;
-            flex-grow: 1;
-        }
-
-        .container-fluid {
-            max-width: 1400px;
-        }
-
-        /* Plot Cards */
-        .plot-card {
-            margin-bottom: 20px;
-        }
-
-        /* Collapsible Plots */
-        .collapse-toggle {
-            cursor: pointer;
-            color: #5001b8;
-            font-weight: bold;
-            font-size: medium;
-        }
-    </style>
     {% endblock %}
 
 </head>
@@ -86,20 +29,31 @@
     <div class="d-flex flex-column flex-lg-row">
         <div class="sidebar">
             <nav class="navbar navbar-dark">
-                <p class="navbar-brand">Perspectives</p>
-                <div class="nav flex-column">
-                    <form action="{{ url_for('enhancement.get_global_plot') }}" method="GET">
-                        <input type="checkbox" class="btn-check" id="btn-check-performance" name="performance" value="1">
+                <form action="{{ url_for('enhancement.get_global_plot') }}" method="GET">
+
+
+                    <div class="nav flex-column">
+                        <p class="navbar-brand">DFG</p>
+                    
+                        <input type="radio" class="btn-check" id="btn-check-frequency" name="graph" value="frequency">
+                        <label class="nav-link btn btn-outline-light" for="btn-check-frequency">
+                            <i class="fa fa-bars" title="See Frequency Graph"></i> Frequency
+                        </label>
+                    
+                        <input type="radio" class="btn-check" id="btn-check-performance" name="graph" value="performance">
                         <label class="nav-link btn btn-outline-light" for="btn-check-performance">
                             <i class="fa fa-clock" title="See Performance Graph"></i> Performance
                         </label>
+                    </div>
+                    
+                    
+
+                    <div class="nav flex-column">
+                        <p class="navbar-brand">Perspectives</p>
+
                         <input type="checkbox" class="btn-check" id="btn-check-space" name="space" value="1">
                         <label class="nav-link btn btn-outline-light" for="btn-check-space">
                             <i class="fa fa-map" title="See Space Plot"></i> Space
-                        </label>
-                        <input type="checkbox" class="btn-check" id="btn-check-time" name="time" value="1">
-                        <label class="nav-link btn btn-outline-light" for="btn-check-time">
-                            <i class="fa fa-calendar" title="See Time Plot"></i> Time
                         </label>
                         <input type="checkbox" class="btn-check" id="btn-check-battery" name="battery" value="1">
                         <label class="nav-link btn btn-outline-light" for="btn-check-battery">
@@ -110,45 +64,51 @@
                             <i class="fa fa-comment" title="See Communication Plot"></i> Communication
                         </label>
                         <div class="d-flex justify-content-center">
-                            <button type="submit" class="btn btn-outline-light">Apply</button>
+                            <button type="submit" class="btn btn-outline-light btn-nav">Apply</button>
                         </div>
-                    </form>
-                </div>
-                
-                <p class="navbar-brand">Handle log</p>
-                <div class="nav flex-column">
-                    <a href="{{ url_for('discovery.init') }}">
-                        <button class="btn btn-outline-light"><i class="fa fa-arrow-left" title="Go Back to Discovery"></i>
-                        </button></a>
+
+                    </div>
+                </form>
+                <div class="mt-auto">
+                    <hr class="border-light">
+                    <p class="navbar-brand text-center">Handle Log</p>
+                    <div class="nav flex-column text-center">
+                        <a href="{{ url_for('discovery.init') }}">
+                            <button class="btn btn-outline-light btn-nav">
+                                <i class="fa fa-arrow-left" title="Go Back to Discovery"></i> Back to Discovery
+                            </button>
+                        </a>
+                    </div>
                 </div>
             </nav>
         </div>
     </div>
 
+
     <div class="content">
         <div class="container-fluid">
-                <!-- Process Area -->
-                <div class="plot-card card">
-                    <div class="card-header">
-                        <span class="collapse-toggle" data-bs-toggle="collapse" data-bs-target="#control_flow">
-                            <i class="fa fa-spinner"></i> Control-flow Perspective
-                        </span>
-                    </div>
-                    <div id="control_flow" class="collapse show card-body">
-                        <div class="d-flex justify-content-end mb-3">
-                            <div class="btn-group">
-                                <button id="toggle-button" class="btn btn-outline-secondary" title="Change Graph Direction"><i
-                                        class="bi bi-arrow-repeat" aria-hidden="true"></i>
-                                </button>
-                                <button onclick="downloadGraph()" class="btn btn-outline-secondary" title="Download SVG"><i
-                                        class="bi bi-download" aria-hidden="true"></i>
-                                </button>
-                            </div>
-                        </div>
-                        <div id="graph-container" style="height: 300px;"></div>
-                    </div>
+            <!-- Process Area -->
+            <div class="plot-card card">
+                <div class="card-header">
+                    <span class="collapse-toggle" data-bs-toggle="collapse" data-bs-target="#control_flow">
+                        <i class="fa fa-spinner"></i> Control-flow Perspective
+                    </span>
                 </div>
-           
+                <div id="control_flow" class="collapse show card-body">
+                    <div class="d-flex justify-content-end mb-3">
+                        <div class="btn-group">
+                            <button id="toggle-button" class="btn btn-outline-secondary"
+                                title="Change Graph Direction"><i class="bi bi-arrow-repeat" aria-hidden="true"></i>
+                            </button>
+                            <button onclick="downloadGraph()" class="btn btn-outline-secondary" title="Download SVG"><i
+                                    class="bi bi-download" aria-hidden="true"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div id="graph-container" style="height: 300px;"></div>
+                </div>
+            </div>
+
         </div>
 
 
@@ -213,23 +173,23 @@
                 </div>
                 {% endif %}
 
-                 <!-- Communication Plot -->
-                 {% if activity_plots.communication %}
-                 <div class="col-md-6">
-                     <div class="plot-card card">
-                         <div class="card-header">
-                             <span class="collapse-toggle" data-bs-toggle="collapse" data-bs-target="#communication_div">
-                                 <i class="fa fa-comment"></i> Communication Perspective
-                             </span>
-                         </div>
-                         <div id="communication_div" class="collapse show card-body">
-                             {% for plot in activity_plots.communication %}
-                                {% include plot %}
-                             {% endfor %}
-                         </div>
-                     </div>
-                 </div>
-                 {% endif %}
+                <!-- Communication Plot -->
+                {% if activity_plots.communication %}
+                <div class="col-md-6">
+                    <div class="plot-card card">
+                        <div class="card-header">
+                            <span class="collapse-toggle" data-bs-toggle="collapse" data-bs-target="#communication_div">
+                                <i class="fa fa-comment"></i> Communication Perspective
+                            </span>
+                        </div>
+                        <div id="communication_div" class="collapse show card-body">
+                            {% for plot in activity_plots.communication %}
+                            {% include plot %}
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
 
 
                 {% else %}

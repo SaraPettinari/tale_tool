@@ -22,26 +22,6 @@ def xes_to_df(log_path):
     pd = xes_converter.apply(log, variant=xes_converter.Variants.TO_DATA_FRAME)
     return pd
 
-def generate_color(activities_count):
-    activities_color = {}
-
-    min_value, max_value = get_min_max_value(activities_count)
-
-    for ac in activities_count:
-        v0 = activities_count[ac]
-        """transBaseColor = int(
-            255 - 100 * (v0 - min_value) / (max_value - min_value + 0.00001))
-        transBaseColorHex = str(hex(transBaseColor))[2:].upper()
-        v1 = "#" + transBaseColorHex + transBaseColorHex + "FF"""
-
-        trans_base_color = int(
-            255 - 100*(v0 - min_value) / (max_value - min_value + 0.00001))
-        trans_base_color_hex = str(hex(trans_base_color))[2:].upper()
-        v1 = "#" + trans_base_color_hex + trans_base_color_hex + "FF"
-
-        activities_color[ac] = v1
-
-    return activities_color
 
 def generate_performance_color(duration_dict):
     activities_color = {}
@@ -86,37 +66,35 @@ def create_dfg(file_path, filtering_conditions={}):
                  'size': 10, 'color': {'background': '#ADFF2F', 'border': "#ADFF2F"}})
     nodes.append({'id': 'end_node', 'label': 'end', 'shape': 'diamond',
                  'size': 10, 'color': {'background': '#ff6666', 'border': "#ff6666"}})
+    colors = generate_color(activity_count, is_performance=False)
     for key in dfg:
         color = "#99ccff"
         node_1 = key[0]
         node_2 = key[1]
         if (node_1 in start_activities):
-            # color = "#ADFF2F"
             count = start_activities[node_1]
             edges.append(
                 {'from': 'start_node', 'to': node_1, 'label': count, 'dashes': True})
         if (node_1 in end_activities):
-            # color = "#ff6666"
             count = end_activities[node_1]
             edges.append(
                 {'from': node_1, 'to': 'end_node', 'label': count, 'dashes': True})
         if (not (node_1 in n_check)):
             n_check.add(node_1)
+            color = colors[node_1]
             nodes.append({'id': node_1, 'label': node_1, 'color': {
                 'background': color}, 'count': activity_count[node_1]})
-        # color = "#99ccff"
         if (node_2 in start_activities):
-            # color = "#ADFF2F"
             count = start_activities[node_2]
             edges.append(
                 {'from': 'start_node', 'to': node_2, 'label': count, 'dashes': True})
         if (node_2 in end_activities):
-            # color = "#ff6666"
             count = end_activities[node_2]
             edges.append(
                 {'from': node_2, 'to': 'end_node', 'label': count, 'dashes': True})
         if (not (node_2 in n_check)):
             n_check.add(node_2)
+            color = colors[node_2]
             nodes.append({'id': node_2, 'label': node_2, 'color': {
                 'background': color}, 'count': activity_count[node_2]})
 
@@ -124,71 +102,6 @@ def create_dfg(file_path, filtering_conditions={}):
 
         id0 = id0 + 1
         id1 = id1 + 1
-
-    return (nodes, edges)
-
-
-def create_dist_dfg(file_path, location_graph=False):
-    log = xes_importer.apply(file_path)
-    # generate_heatmap_data(file_path)
-    log = interval_lifecycle.to_interval(log)
-    # Filter drone resources
-    resources = pm4py.get_event_attribute_values(log, "org:resource")
-    dict_kres = dict()
-    dict_start = dict()
-    dict_end = dict()
-
-    for res in resources:
-        tracefilter = pm4py.filter_event_attribute_values(
-            log, "org:resource", res, level="event", retain=True)
-        dfg, start, end = pm4py.discover_directly_follows_graph(tracefilter)
-        dict_kres.update(dfg)
-        dict_start.update(start)
-        dict_end.update(end)
-
-    activity_key = exec_utils.get_param_value(
-        Parameters.ACTIVITY_KEY, {}, xes.DEFAULT_NAME_KEY)
-    activity_count = attr_get.get_attribute_values(
-        log, activity_key, parameters={})
-    nodes = []
-    n_check = set()
-    edges = []
-    colors = generate_color(activity_count)  # for location graph
-    for key in dict_kres:
-        # if we it is an activity graph
-        if not location_graph:
-            color = "#1E90FF"
-            if (key[0] in dict_start):
-                color = "#ADFF2F"
-            if (key[0] in dict_end):
-                color = "#FF0000"
-            if (not (key[0] in n_check)):
-                n_check.add(key[0])
-                nodes.append({'id': key[0], 'label': key[0], 'color': {
-                    'background': color}, 'count': activity_count[key[0]]})
-            # check key 1
-            color = "#1E90FF"
-            if (key[1] in dict_start):
-                color = "#ADFF2F"
-            if (key[1] in dict_end):
-                color = "#FF0000"
-            if (not (key[1] in n_check)):
-                n_check.add(key[1])
-                nodes.append({'id': key[1], 'label': key[1], 'color': {
-                    'background': color}, 'count': activity_count[key[1]]})
-        # if we it is a location graph
-        else:
-            if (not (key[0] in n_check)):
-                n_check.add(key[0])
-                nodes.append({'id': key[0], 'label': key[0], 'color': {
-                    'background': colors[key[0]]}, 'count': activity_count[key[0]]})
-            if (not (key[1] in n_check)):
-                n_check.add(key[1])
-                nodes.append({'id': key[1], 'label': key[1], 'color': {
-                    'background': colors[key[1]]}, 'count': activity_count[key[1]]})
-
-        edges.append({'from': key[0], 'to': key[1],
-                     'label': str(dict_kres[key])})
 
     return (nodes, edges)
 
@@ -212,22 +125,22 @@ def create_performance_dfg(file_path):
     edges = []
     id0 = 0
     id1 = 0
-    colors = generate_color(activity_duration)
+    nodes.append({'id': 'start_node', 'label': 'start', 'shape': 'diamond',
+                 'size': 10, 'color': {'background': '#ADFF2F', 'border': "#ADFF2F"}})
+    nodes.append({'id': 'end_node', 'label': 'end', 'shape': 'diamond',
+                 'size': 10, 'color': {'background': '#ff6666', 'border': "#ff6666"}})
+    colors = generate_color(activity_duration, is_performance=True)
     for key in dfg:
         if (key[0] in start_activities):
-            color = "#ADFF2F"
             count = 'instant'
             edges.append(
                 {'from': 'start_node', 'to': key[0], 'label': count, 'dashes': True})
-        color = "#000000"
         if (not (key[0] in n_check)):
             n_check.add(key[0])
             color = colors[key[0]]
             nodes.append({'id': key[0], 'label': key[0], 'color': {
-                'background': color}, 'count': activity_duration[key[0]]})
-        color = "#cc99ff"
+                'background': color}, 'count': str(activity_duration[key[0]]) + 's'})
         if (key[1] in end_activities):
-            color = "#ff6666"
             count = 'instant'
             edges.append(
                 {'from': key[1], 'to': 'end_node', 'label': count, 'dashes': True})
@@ -235,7 +148,7 @@ def create_performance_dfg(file_path):
             n_check.add(key[1])
             color = colors[key[1]]
             nodes.append({'id': key[1], 'label': key[1], 'color': {
-                'background': color}, 'count': activity_duration[key[1]]})
+                'background': color}, 'count': str(activity_duration[key[1]]) + 's'})
 
         mean_sec = round(dfg[key]['mean'], 2)
 
@@ -251,6 +164,7 @@ def create_performance_dfg(file_path):
 
         id0 = id0 + 1
         id1 = id1 + 1
+        
 
     return (nodes, edges)
 
@@ -289,6 +203,60 @@ def get_activity_duration(log):
                 del start_times[activity]
 
     durations_df = DataFrame(activity_durations)
-    durations_df = zip(durations_df, durations_df.median(durations_df['duration']))
-    return durations_df
+    
+    median_durations = durations_df.groupby('activity')['duration'].median()
+    median_durations_dict = median_durations.to_dict() 
+    
+    return median_durations_dict
 
+
+## Color generation
+def hex_to_rgb(hex_color):
+    """Convert a hexadecimal color to an RGB tuple."""
+    hex_color = hex_color.lstrip('#')
+    if len(hex_color) != 6:
+        raise ValueError("Input #" + hex_color + " is not a valid hexadecimal color.")
+    return tuple(int(hex_color[i:i+2], 16) for i in (0, 2, 4))
+
+def rgb_to_hex(rgb):
+    """Convert an RGB tuple to a hexadecimal color."""
+    return '#' + ''.join(f'{value:02x}' for value in rgb)
+
+def interpolate_color(color1, color2, scale_value, scale_max):
+    """Interpolate between two colors based on scale_value and scale_max."""
+    if not (0 <= scale_value <= scale_max):
+        raise ValueError("Scale value must be between 0 and scale_max.")
+
+    # Convert colors to RGB
+    rgb1 = hex_to_rgb(color1)
+    rgb2 = hex_to_rgb(color2)
+
+    # Interpolate each channel
+    interpolated_rgb = tuple(
+        round(rgb1[i] + (rgb2[i] - rgb1[i]) * (scale_value / scale_max))
+        for i in range(3)
+    )
+
+    # Convert back to hexadecimal
+    return rgb_to_hex(interpolated_rgb)
+
+def generate_color(activities_count, is_performance : False):
+    activities_color = {}
+
+    min_value, max_value = get_min_max_value(activities_count)
+    
+    if is_performance:
+        color1 = '#ffdfd8'
+        color2 = '#dc3613'
+    else:
+        color1 = '#d8f1ff'
+        color2 = '#52a6fa'
+    
+
+    for ac in activities_count:
+        v0 = activities_count[ac]
+        v1 = interpolate_color(color1, color2, v0, max_value)
+    
+        activities_color[ac] = v1
+
+    return activities_color

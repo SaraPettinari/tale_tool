@@ -17,31 +17,35 @@ git clone <repository_link>
 
 **Create a virtual environment**
 ```bash
-python -m venv venv
+python -m venv env
 ```
 
 **Activate the virtual environment**
 
 _Windows_
 ```bash
-myenv\Scripts\activate
+env\Scripts\activate
 ```
 
 _macOS and Linux_
 
 ```bash
-source myenv/bin/activate
+source env/bin/activate
 ```
 
 **Install dependencies**
 
-```bash
-pip install -r requirements.txt
-```
+* Install Graphviz (pm4py requirement) 🔗 [here](https://graphviz.org/download/)
+
+* Install Python dependencies:
+
+    ```bash
+    pip install -r requirements.txt
+    ```
 
 ## Run
 ```bash
-python main.py  
+python3 main.py  
 ```
 
 
