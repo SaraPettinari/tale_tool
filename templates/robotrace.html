@@ -55,6 +55,23 @@
                         <i class="fa fa-table" aria-hidden="true"></i> Toggle File Upload
                     </button>
                 </div>
+
+                {% if session.files %}
+                {% set files = session.files %}
+                <hr class="border-light">
+                <p class="navbar-brand">Available Files</p>
+
+                <form id="filters" action="{{ url_for('discovery.init') }}" method="POST">
+                    {% for f in files %}
+                    <button class="btn btn-outline-secondary btn-nav" type="submit" name="file_name" value="{{ f }}" title="{{ f }}">
+                        {{ f }}
+                    </button>
+                    {% endfor %}
+                </form>
+                
+
+                {% endif %}
+
             </nav>
         </div>
     </div>
@@ -72,7 +89,7 @@
                 </div>
                 <div class="card-body">
                     {% set filter = session.fdata.filters %}
-                    <form id="filters" action="{{url_for('discovery.discover_dfg')}}" method="GET">
+                    <form id="filters" action="{{url_for('discovery.filter_file')}}" method="GET">
                         {% if filter.resources %}
                         <div class="mb-3">
                             <label for="selectRes" class="form-label">
@@ -102,8 +119,7 @@
                             <input type="hidden" name="file_name" value="{{session.file_name}}" />
                         </div>
                         {% endif %}
-                        <button type="submit" class="btn btn-outline-secondary"
-                            title="Discover filtered DFG">Discover!</button>
+                        <button type="submit" class="btn btn-outline-secondary" title="Log Filtering">Filter!</button>
                     </form>
                 </div>
             </div>
@@ -196,6 +212,7 @@
                         </td>
                         <td>
                             <form action="{{ url_for('discovery.init') }}" method="POST">
+                                <input type="hidden" name="delete_file" value="true">
                                 <input type="hidden" name="file_name" value="{{value}}" />
                                 <button type="submit" class="btn btn-outline-danger" title="Delete Log"><i
                                         class="fa fa-close"></i></button>
@@ -206,7 +223,7 @@
             </table>
         </div>
     </div>
-    
+
     {% endif %}
 
 

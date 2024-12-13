@@ -3,6 +3,7 @@ from pm4py.util import xes_constants as xes
 MEASURES = 'measures'
 
 FILE = 'file_name'
+FILE_LIST = 'files'
 
 ALL = 'global'
 
@@ -22,3 +23,5 @@ CASE = 'case:'  + xes.DEFAULT_TRACEID_KEY
 RESOURCE = xes.DEFAULT_RESOURCE_KEY
 TIMESTAMP = xes.DEFAULT_TIMESTAMP_KEY
 LIFECYCLE = xes.DEFAULT_TRANSITION_KEY
+
+FILTERS = 'filters'
